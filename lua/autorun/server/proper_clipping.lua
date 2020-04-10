@@ -191,7 +191,7 @@ duplicator.RegisterEntityModifier("clips", function(ply, ent, data)
 	for _, clip in ipairs(data) do
 		local norm = clip.n:Forward()
 		
-		ProperClipping.AddClip(ent, norm, clip.d, clip.inside)
+		ProperClipping.AddClip(ent, norm, -clip.d, clip.inside)
 	end
 end)
 

@@ -12,23 +12,28 @@ local function renderOverride(self)
 	local prev = render.EnableClipping(true)
 	local max = cvar_clips:GetInt()
 	local planes = 0
+	local inside = false
 	
 	local ang = self:GetAngles()
 	
 	for i, clip in ipairs(self.ClipData) do
-		if i > max then break end
+		if not inside and clip.inside then
+			inside = true
+		end
 		
-		planes = i
-		
-		local norm = Vector(clip.norm)
-		norm:Rotate(ang)
-		
-		render.PushCustomClipPlane(norm, norm:Dot(self:GetPos()) - clip.d)
+		if i <= max then
+			planes = i
+			
+			local norm = Vector(clip.norm)
+			norm:Rotate(ang)
+			
+			render.PushCustomClipPlane(norm, norm:Dot(self:GetPos()) - clip.d)
+		end
 	end
 	
 	self:DrawModel()
 	
-	if self.ClipData[1].inside then
+	if inside then
 		render.CullMode(MATERIAL_CULLMODE_CW)
 		self:DrawModel()
 		render.CullMode(MATERIAL_CULLMODE_CCW)
