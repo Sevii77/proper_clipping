@@ -112,7 +112,7 @@ function TOOL:RightClick(tr)
 	local owner = self:GetOwner()
 	local norm_org = norm
 	local norm = norm * (owner:KeyDown(IN_WALK) and -1 or 1)
-	local dist = -norm:Dot(ent:LocalToWorld(Vector()) - (origin + norm_org * self:GetClientNumber("offset")))
+	local dist = -norm:Dot(ent:LocalToWorld(ent:OBBCenter()) - (origin + norm_org * self:GetClientNumber("offset")))
 	local norm = ent:WorldToLocalAngles(norm:Angle()):Forward() * -1
 	
 	local physics = self:GetClientNumber("physics") ~= 0
@@ -154,12 +154,26 @@ if CLIENT then
 	model1:SetNoDraw(true)
 	model2:SetNoDraw(true)
 	
-	function TOOL:DrawHUD()
-		local owner = self:GetOwner()
-		local tr = owner:GetEyeTrace()
+	hook.Add("PostDrawOpaqueRenderables", "proper_clipping", function()
+		if GetConVarString("gmod_toolmode") ~= "proper_clipping" then return end
+		local ply = LocalPlayer()
+		local wep = ply:GetActiveWeapon()
+		if not wep or not wep:IsValid() or wep:GetClass() ~= "gmod_tool" then return end
+		local tool = ply:GetTool("proper_clipping")
+		if not tool then return end
 		
-		local op = self:GetOperation()
-		local stage = self:GetStage()
+		local tr = ply:GetEyeTrace()
+		local ent = tr.Entity
+		
+		local op = tool:GetOperation()
+		local stage = tool:GetStage()
+		
+		if not (op == 1 and stage == 1 and ent:IsWorld()) then
+			if not ent or not ent:IsValid() then return end
+			if ent:IsPlayer() or ent:IsWorld() then return end
+		end
+		
+		--------------------
 		
 		cam.Start3D()
 		
@@ -173,7 +187,6 @@ if CLIENT then
 			render.DrawLine(origin, origin + norm * 16, color_red)
 		else
 			-- Preview
-			local ent = tr.Entity
 			if ent and ent:IsValid() and not ent:IsPlayer() then
 				local mdl = ent:GetModel()
 				local pos = ent:GetPos()
@@ -186,11 +199,11 @@ if CLIENT then
 				model1:SetAngles(ang)
 				model2:SetAngles(ang)
 				
-				local i = owner:KeyDown(IN_WALK)
-				local offset = self:GetClientNumber("offset") * (i and -1 or 1)
+				local i = ply:KeyDown(IN_WALK)
+				local offset = tool:GetClientNumber("offset") * (i and -1 or 1)
 				
 				local prev = render.EnableClipping(true)
-				
+				render.ClearDepth()
 				render.PushCustomClipPlane(norm * (i and 1 or -1), norm:Dot(origin) * (i and 1 or -1) - offset)
 				render.SetColorModulation(0.3, 2, 0.5)
 				model1:DrawModel()
@@ -206,6 +219,6 @@ if CLIENT then
 		end
 		
 		cam.End3D()
-	end
+	end)
 	
 end
