@@ -14,4 +14,4 @@ Client Convars:
 - proper_clipping_physics
 
 
-Comming to a Steam Workshop near you Soon™️
+Comming to a Steam Workshop near you Soon™
