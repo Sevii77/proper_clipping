@@ -1,6 +1,9 @@
 --[[
 	This is shared since not setting a custom physicsobj on the clientside will make the client think there is no physicsobj there
 	Altho this does cause funky behavour with moving the entity i think its worth it
+	Also clearing the physclips from a entity makes it behave like there is nothing there on the client untill its duped and spawned,
+		could make it create it the same was sv does but again, funky behavour. Guess its okey like this? again gotta find a way to
+		somehow fix. Maby take a look at how prop resize addons do it.
 	Default limit is 0 for this reason
 	
 	TODO: try to fix funky behavour
@@ -68,13 +71,39 @@ function ProperClipping.CanAddPhysicsClip(ent, ply)
 	return physcount < cvar_physics:GetInt()
 end
 
+function ProperClipping.GetPhysObjData(physobj)
+	return {
+		vol = physobj:GetVolume(),
+		mass = physobj:GetMass(),
+		mat = physobj:GetMaterial(),
+		contents = physobj:GetContents(),
+		motion = physobj:IsMotionEnabled()
+	}
+end
+
+function ProperClipping.ApplyPhysObjData(physobj, data)
+	physobj:SetMass(math.max(1, physobj:GetVolume() / data.vol * data.mass))
+	physobj:SetMaterial(data.mat)
+	physobj:SetContents(data.contents)
+	
+	if SERVER then
+		physobj:EnableMotion(data.motion)
+		if data.motion then
+			physobj:Wake()
+		end
+	else
+		physobj:EnableMotion(false)
+		physobj:Sleep()
+	end
+end
+
 function ProperClipping.ClipPhysics(ent, norm, dist)
-	local physobj, mdl
+	local physobj
 	
 	if SERVER then
 		physobj = ent:GetPhysicsObject()
 	else
-		mdl = ents.CreateClientProp()
+		local mdl = ents.CreateClientProp()
 		mdl:SetModel(ent:GetModel())
 		mdl:PhysicsInit(SOLID_VPHYSICS)
 		mdl:Spawn()
@@ -88,10 +117,7 @@ function ProperClipping.ClipPhysics(ent, norm, dist)
 	ent.PhysicsClipped = true
 	
 	-- Store properties to copy over to the new physobj
-	local vol = physobj:GetVolume()
-	local mass = physobj:GetMass()
-	local motion = physobj:IsMotionEnabled()
-	local mat = physobj:GetMaterial()
+	local data = ProperClipping.GetPhysObjData(physobj)
 	
 	-- Cull stuff
 	local pos = -norm * dist
@@ -109,21 +135,14 @@ function ProperClipping.ClipPhysics(ent, norm, dist)
 		end
 	end
 	
-	if mdl then
-		
-	end
-	
 	-- Make new one
 	if not ent:PhysicsInitMultiConvex(new) then return end
+	ent:SetMoveType(MOVETYPE_VPHYSICS)
+	ent:SetSolid(SOLID_VPHYSICS)
 	ent:EnableCustomCollisions(true)
 	
-	if CLIENT then return end
-	
 	-- Apply stored properties to the new physobj
-	local physobj = ent:GetPhysicsObject()
-	physobj:SetMass(math.max(1, physobj:GetVolume() / vol * mass))
-	physobj:EnableMotion(motion)
-	physobj:SetMaterial(mat)
+	ProperClipping.ApplyPhysObjData(ent:GetPhysicsObject(), data)
 end
 
 function ProperClipping.ResetPhysics(ent)
@@ -132,8 +151,24 @@ function ProperClipping.ResetPhysics(ent)
 	ent.PhysicsClipped = nil
 	
 	if SERVER then
-		ent:PhysicsInit(SOLID_VPHYSICS)
+		local physobj = ent:GetPhysicsObject()
+		local data
+		if physobj:IsValid() then
+			data = ProperClipping.GetPhysObjData(physobj)
+		end
+		
+		if not ent:PhysicsInit(SOLID_VPHYSICS) then return end
+		ent:SetMoveType(MOVETYPE_VPHYSICS)
+		ent:SetSolid(SOLID_VPHYSICS)
+		ent:EnableCustomCollisions(false)
+		
+		if data then
+			ProperClipping.ApplyPhysObjData(ent:GetPhysicsObject(), data)
+		end
 	else
 		ent:PhysicsDestroy()
+		ent:SetMoveType(MOVETYPE_VPHYSICS)
+		ent:SetSolid(SOLID_VPHYSICS)
+		ent:EnableCustomCollisions(false)
 	end
 end
