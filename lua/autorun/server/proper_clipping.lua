@@ -188,11 +188,15 @@ duplicator.RegisterEntityModifier("clips", function(ply, ent, data)
 		return
 	end
 	
-	for _, clip in ipairs(data) do
-		local norm = clip.n:Forward()
+	timer.Simple(0.5, function()
+		duplicator.ClearEntityModifier(ent, "clips")
 		
-		ProperClipping.AddClip(ent, norm, -clip.d, clip.inside)
-	end
+		for _, clip in ipairs(data) do
+			local norm = clip.n:Forward()
+			
+			ProperClipping.AddClip(ent, norm, -clip.d, clip.inside)
+		end
+	end)
 end)
 
 -- clips from https://steamcommunity.com/sharedfiles/filedetails/?id=238138995
@@ -207,11 +211,15 @@ duplicator.RegisterEntityModifier("clipping_all_prop_clips", function(ply, ent, 
 		return
 	end
 	
-	for _, clip in ipairs(data) do
-		ProperClipping.AddClip(ent, clip[1]:Forward(), -clip[2], insides[ent])
-	end
-	
-	insides[ent] = nil
+	timer.Simple(0.5, function()
+		duplicator.ClearEntityModifier(ent, "clipping_all_prop_clips")
+		
+		for _, clip in ipairs(data) do
+			ProperClipping.AddClip(ent, clip[1]:Forward(), -clip[2], insides[ent])
+		end
+		
+		insides[ent] = nil
+	end)
 end)
 
 duplicator.RegisterEntityModifier("clipping_render_inside", function(ply, ent, data)
