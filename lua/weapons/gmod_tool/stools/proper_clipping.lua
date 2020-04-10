@@ -110,8 +110,9 @@ function TOOL:RightClick(tr)
 	if CLIENT then return true end
 	
 	local owner = self:GetOwner()
+	local norm_org = norm
 	local norm = norm * (owner:KeyDown(IN_WALK) and -1 or 1)
-	local dist = -norm:Dot(ent:LocalToWorld(Vector()) - (origin + norm * self:GetClientNumber("offset")))
+	local dist = -norm:Dot(ent:LocalToWorld(Vector()) - (origin + norm_org * self:GetClientNumber("offset")))
 	local norm = ent:WorldToLocalAngles(norm:Angle()):Forward() * -1
 	
 	local physics = self:GetClientNumber("physics") ~= 0
@@ -186,15 +187,16 @@ if CLIENT then
 				model2:SetAngles(ang)
 				
 				local i = owner:KeyDown(IN_WALK)
+				local offset = self:GetClientNumber("offset") * (i and -1 or 1)
 				
 				local prev = render.EnableClipping(true)
 				
-				render.PushCustomClipPlane(norm * (i and 1 or -1), norm:Dot(origin) * (i and 1 or -1))
+				render.PushCustomClipPlane(norm * (i and 1 or -1), norm:Dot(origin) * (i and 1 or -1) - offset)
 				render.SetColorModulation(0.3, 2, 0.5)
 				model1:DrawModel()
 				render.PopCustomClipPlane()
 				
-				render.PushCustomClipPlane(norm * (i and -1 or 1), norm:Dot(origin) * (i and -1 or 1))
+				render.PushCustomClipPlane(norm * (i and -1 or 1), norm:Dot(origin) * (i and -1 or 1) + offset)
 				render.SetColorModulation(2, 0.2, 0.3)
 				model2:DrawModel()
 				render.PopCustomClipPlane()
