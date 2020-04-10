@@ -173,7 +173,7 @@ duplicator.RegisterEntityModifier("proper_clipping", function(ply, ent, data)
 		ProperClipping.AddClip(ent, norm, dist, inside, physics)
 	end
 	
-	if physcount >= physmax and physcount ~= math.huge then
+	if physcount > physmax and physcount ~= math.huge then
 		ply:ChatPrint("Max physics clips per entity reached (max " .. physmax .. "), " .. tostring(ent) .. " will only have " .. physmax .. " instead of " .. physcount .. ".")
 	end
 end)
