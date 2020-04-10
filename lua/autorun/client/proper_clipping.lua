@@ -16,7 +16,7 @@ local function renderOverride(self)
 	local ang = self:GetAngles()
 	
 	for i, clip in ipairs(self.ClipData) do
-		if i > max then return end
+		if i > max then break end
 		
 		planes = i
 		
