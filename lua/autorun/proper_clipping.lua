@@ -95,12 +95,21 @@ function ProperClipping.CanAddPhysicsClip(ent, ply)
 end
 
 function ProperClipping.GetPhysObjData(physobj)
+	local constraints, constraint_ents = {}, {}
+	
+	if SERVER then
+		duplicator.GetAllConstrainedEntitiesAndConstraints(physobj:GetEntity(), constraint_ents, constraints)
+	end
+	
 	return {
 		vol = physobj:GetVolume(),
 		mass = physobj:GetMass(),
 		mat = physobj:GetMaterial(),
 		contents = physobj:GetContents(),
-		motion = physobj:IsMotionEnabled()
+		motion = physobj:IsMotionEnabled(),
+		
+		constraints = constraints,
+		constraint_ents = constraint_ents
 	}
 end
 
@@ -114,6 +123,12 @@ function ProperClipping.ApplyPhysObjData(physobj, data)
 		if data.motion then
 			physobj:Wake()
 		end
+		
+		timer.Simple(0, function()
+			for id, constraint in pairs(data.constraints) do
+				print(duplicator.CreateConstraintFromTable(constraint, data.constraint_ents))
+			end
+		end)
 	else
 		physobj:EnableMotion(false)
 		physobj:Sleep()
