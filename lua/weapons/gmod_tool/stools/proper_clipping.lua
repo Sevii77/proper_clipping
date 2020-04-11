@@ -36,6 +36,14 @@ if CLIENT then
 	}
 	
 	function TOOL.BuildCPanel(panel)
+		local cvar_visual = GetConVar("proper_clipping_max_visual")
+		panel:AddControl("Slider", {
+			label = "Max Visual Clips",
+			command = "proper_clipping_max_visual",
+			min = cvar_visual:GetMin(),
+			max = cvar_visual:GetMax()
+		})
+		
 		panel:AddControl("ListBox", {
 			Label = "Mode",
 			Options = {
