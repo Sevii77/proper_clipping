@@ -243,6 +243,8 @@ duplicator.RegisterEntityModifier("clipping_render_inside", function(ply, ent, d
 	end
 	
 	timer.Simple(1, function()
+		duplicator.ClearEntityModifier(ent, "clipping_render_inside")
+		
 		insides[ent] = nil
 	end)
 end)
