@@ -169,6 +169,9 @@ if CLIENT then
 		
 		if last_ent and last_ent:IsValid() then
 			last_ent:SetNoDraw(false)
+			last_ent:CreateShadow()
+			
+			last_ent = nil
 		end
 		
 		if GetConVarString("gmod_toolmode") ~= "proper_clipping" then return end
