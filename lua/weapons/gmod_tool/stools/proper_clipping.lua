@@ -154,7 +154,15 @@ if CLIENT then
 	model1:SetNoDraw(true)
 	model2:SetNoDraw(true)
 	
-	hook.Add("PostDrawOpaqueRenderables", "proper_clipping", function()
+	local last_ent
+	
+	hook.Add("PostDrawOpaqueRenderables", "proper_clipping", function(depth, skybox)
+		if skybox then return end
+		
+		if last_ent and last_ent:IsValid() then
+			last_ent:SetNoDraw(false)
+		end
+		
 		if GetConVarString("gmod_toolmode") ~= "proper_clipping" then return end
 		local ply = LocalPlayer()
 		local wep = ply:GetActiveWeapon()
@@ -175,8 +183,6 @@ if CLIENT then
 		
 		--------------------
 		
-		cam.Start3D()
-		
 		if op == 1 and stage == 1 then
 			-- Line mode
 			local norm = (tr.HitPos - origin):GetNormalized()
@@ -188,22 +194,34 @@ if CLIENT then
 		else
 			-- Preview
 			if ent and ent:IsValid() and not ent:IsPlayer() then
-				local mdl = ent:GetModel()
-				local pos = ent:GetPos()
-				local ang = ent:GetAngles()
+				if ent ~= last_ent then
+					local mdl = ent:GetModel()
+					model1:SetModel(mdl)
+					model2:SetModel(mdl)
+					
+					local pos = ent:GetPos()
+					model1:SetPos(pos)
+					model2:SetPos(pos)
+					
+					local ang = ent:GetAngles()
+					model1:SetAngles(ang)
+					model2:SetAngles(ang)
+					
+					for _, group in ipairs(ent:GetBodyGroups()) do
+						local id = group.id
+						local val = ent:GetBodygroup(id)
+						model1:SetBodygroup(id, val)
+						model2:SetBodygroup(id, val)
+					end
+				end
 				
-				model1:SetModel(mdl)
-				model2:SetModel(mdl)
-				model1:SetPos(pos)
-				model2:SetPos(pos)
-				model1:SetAngles(ang)
-				model2:SetAngles(ang)
+				ent:SetNoDraw(true)
 				
 				local i = ply:KeyDown(IN_WALK)
 				local offset = tool:GetClientNumber("offset") * (i and -1 or 1)
 				
 				local prev = render.EnableClipping(true)
-				render.ClearDepth()
+				
 				render.PushCustomClipPlane(norm * (i and 1 or -1), norm:Dot(origin) * (i and 1 or -1) - offset)
 				render.SetColorModulation(0.3, 2, 0.5)
 				model1:DrawModel()
@@ -215,10 +233,10 @@ if CLIENT then
 				render.PopCustomClipPlane()
 				
 				render.EnableClipping(prev)
+				
+				last_ent = ent
 			end
 		end
-		
-		cam.End3D()
 	end)
 	
 end
