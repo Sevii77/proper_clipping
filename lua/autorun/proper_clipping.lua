@@ -19,16 +19,20 @@ local cvar_physics = CreateConVar("proper_clipping_max_physics", "0", FCVAR_ARCH
 
 ----------------------------------------
 
-hook.Add("Think", "proper_clipping_physics", function()
-	for ent, physobj in pairs(ProperClipping.ClippedPhysics) do
-		physobj:SetPos(ent:GetPos())
-		physobj:SetAngles(ent:GetAngles())
-	end
-end)
+if CLIENT then
+	
+	hook.Add("Think", "proper_clipping_physics", function()
+		for ent, physobj in pairs(ProperClipping.ClippedPhysics) do
+			physobj:SetPos(ent:GetPos())
+			physobj:SetAngles(ent:GetAngles())
+		end
+	end)
 
-hook.Add("PhysgunPickup", "proper_clipping_physics", function(ply, ent)
-	if ProperClipping.ClippedPhysics[ent] then return false end
-end)
+	hook.Add("PhysgunPickup", "proper_clipping_physics", function(ply, ent)
+		if ProperClipping.ClippedPhysics[ent] then return false end
+	end)
+	
+end
 
 ----------------------------------------
 
