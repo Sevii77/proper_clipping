@@ -1,17 +1,34 @@
 --[[
-	This is shared since not setting a custom physicsobj on the clientside will make the client think there is no physicsobj there
-	Altho this does cause funky behavour with moving the entity i think its worth it
-	Also clearing the physclips from a entity makes it behave like there is nothing there on the client untill its duped and spawned,
-		could make it create it the same was sv does but again, funky behavour. Guess its okey like this? again gotta find a way to
-		somehow fix. Maby take a look at how prop resize addons do it.
+	[x] This is shared since not setting a custom physicsobj on the clientside will make the client think there is no physicsobj there
+	[x] Altho this does cause funky behavour with moving the entity i think its worth it
+	[x] Also clearing the physclips from a entity makes it behave like there is nothing there on the client untill its duped and spawned,
+	        could make it create it the same was sv does but again, funky behavour. Guess its okey like this? again gotta find a way to
+	        somehow fix. Maby take a look at how prop resize addons do it.
+	
+	This has been somewhat fixed? Requires some more testing to be sure.
+	
 	Default limit is 0 for this reason
 	
-	TODO: try to fix funky behavour
+	[x] TODO: try to fix funky behavour (done?)
 ]]
 
 ProperClipping = ProperClipping or {}
+ProperClipping.ClippedPhysics = {}
 
 local cvar_physics = CreateConVar("proper_clipping_max_physics", "0", FCVAR_ARCHIVE, "Max physical clips a entity can have", 0, 8)
+
+----------------------------------------
+
+hook.Add("Think", "proper_clipping_physics", function()
+	for ent, physobj in pairs(ProperClipping.ClippedPhysics) do
+		physobj:SetPos(ent:GetPos())
+		physobj:SetAngles(ent:GetAngles())
+	end
+end)
+
+hook.Add("PhysgunPickup", "proper_clipping_physics", function(ply, ent)
+	if ProperClipping.ClippedPhysics[ent] then return false end
+end)
 
 ----------------------------------------
 
@@ -51,6 +68,8 @@ local function clipPlane3D(poly, plane, plane_dir)
 	
 	return n
 end
+
+----------------------------------------
 
 function ProperClipping.MaxPhysicsClips()
 	return cvar_physics:GetInt()
@@ -141,6 +160,13 @@ function ProperClipping.ClipPhysics(ent, norm, dist)
 	ent:SetSolid(SOLID_VPHYSICS)
 	ent:EnableCustomCollisions(true)
 	
+	if CLIENT then
+		ProperClipping.ClippedPhysics[ent] = ent:GetPhysicsObject()
+		ent:CallOnRemove("proper_clipping_physics", function()
+			ProperClipping.ClippedPhysics[ent] = nil
+		end)
+	end
+	
 	-- Apply stored properties to the new physobj
 	ProperClipping.ApplyPhysObjData(ent:GetPhysicsObject(), data)
 end
@@ -150,25 +176,21 @@ function ProperClipping.ResetPhysics(ent)
 	
 	ent.PhysicsClipped = nil
 	
-	if SERVER then
-		local physobj = ent:GetPhysicsObject()
-		local data
-		if physobj:IsValid() then
-			data = ProperClipping.GetPhysObjData(physobj)
-		end
-		
-		if not ent:PhysicsInit(SOLID_VPHYSICS) then return end
-		ent:SetMoveType(MOVETYPE_VPHYSICS)
-		ent:SetSolid(SOLID_VPHYSICS)
-		ent:EnableCustomCollisions(false)
-		
-		if data then
-			ProperClipping.ApplyPhysObjData(ent:GetPhysicsObject(), data)
-		end
-	else
-		ent:PhysicsDestroy()
-		ent:SetMoveType(MOVETYPE_VPHYSICS)
-		ent:SetSolid(SOLID_VPHYSICS)
-		ent:EnableCustomCollisions(false)
+	local physobj = ent:GetPhysicsObject()
+	local data
+	if physobj:IsValid() then
+		data = ProperClipping.GetPhysObjData(physobj)
+	end
+	
+	if not ent:PhysicsInit(SOLID_VPHYSICS) then return end
+	ent:SetMoveType(MOVETYPE_VPHYSICS)
+	ent:SetSolid(SOLID_VPHYSICS)
+	
+	if data then
+		ProperClipping.ApplyPhysObjData(ent:GetPhysicsObject(), data)
+	end
+	
+	if CLIENT then
+		ProperClipping.ClippedPhysics[ent] = ent:GetPhysicsObject()
 	end
 end
