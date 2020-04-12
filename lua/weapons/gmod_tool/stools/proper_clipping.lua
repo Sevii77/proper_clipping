@@ -120,7 +120,7 @@ function TOOL:RightClick(tr)
 	local owner = self:GetOwner()
 	local norm_org = norm
 	local norm = norm * (owner:KeyDown(IN_WALK) and -1 or 1)
-	local dist = -norm:Dot(ent:LocalToWorld(ent:OBBCenter()) - (origin + norm_org * self:GetClientNumber("offset")))
+	local dist = norm:Dot(ent:GetPos() - (origin + norm_org * self:GetClientNumber("offset")))
 	local norm = ent:WorldToLocalAngles(norm:Angle()):Forward() * -1
 	
 	local physics = self:GetClientNumber("physics") ~= 0

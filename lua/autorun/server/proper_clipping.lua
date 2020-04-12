@@ -180,6 +180,11 @@ duplicator.RegisterEntityModifier("proper_clipping", function(ply, ent, data)
 	end
 end)
 
+-- Function to convert from OBBCenter translated to world > GetPos cuz obbcenter fucks up visclip with physclip
+local function convert(ent, norm, dist)
+	return norm, norm:Dot(norm * dist + ent:OBBCenter())
+end
+
 -- clips from https://steamcommunity.com/sharedfiles/filedetails/?id=106753151
 duplicator.RegisterEntityModifier("clips", function(ply, ent, data)
 	if not ent or not ent:IsValid() then return end
@@ -194,9 +199,9 @@ duplicator.RegisterEntityModifier("clips", function(ply, ent, data)
 		duplicator.ClearEntityModifier(ent, "clips")
 		
 		for _, clip in ipairs(data) do
-			local norm = clip.n:Forward()
+			local norm, dist = convert(ent, clip.n:Forward(), clip.d)
 			
-			ProperClipping.AddClip(ent, norm, -clip.d, clip.inside)
+			ProperClipping.AddClip(ent, norm, dist, clip.inside)
 		end
 	end)
 end)
@@ -217,7 +222,9 @@ duplicator.RegisterEntityModifier("clipping_all_prop_clips", function(ply, ent, 
 		duplicator.ClearEntityModifier(ent, "clipping_all_prop_clips")
 		
 		for _, clip in ipairs(data) do
-			ProperClipping.AddClip(ent, clip[1]:Forward(), -clip[2], insides[ent])
+			local norm, dist = convert(ent, clip[1]:Forward(), clip[2])
+			
+			ProperClipping.AddClip(ent, norm, dist, insides[ent])
 		end
 		
 		insides[ent] = nil

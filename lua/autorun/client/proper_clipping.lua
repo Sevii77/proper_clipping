@@ -14,6 +14,7 @@ local function renderOverride(self)
 	local planes = 0
 	local inside = false
 	
+	local pos = self:GetPos()
 	local ang = self:GetAngles()
 	
 	for i, clip in ipairs(self.ClipData) do
@@ -27,7 +28,7 @@ local function renderOverride(self)
 			local norm = Vector(clip.norm)
 			norm:Rotate(ang)
 			
-			render.PushCustomClipPlane(norm, norm:Dot(self:LocalToWorld(self:OBBCenter()) + norm * -clip.d))
+			render.PushCustomClipPlane(norm, norm:Dot(pos + norm * clip.d))
 		end
 	end
 	
