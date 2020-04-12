@@ -27,7 +27,7 @@ local function renderOverride(self)
 			local norm = Vector(clip.norm)
 			norm:Rotate(ang)
 			
-			render.PushCustomClipPlane(norm, norm:Dot(self:GetPos()) - clip.d)
+			render.PushCustomClipPlane(norm, norm:Dot(self:LocalToWorld(self:OBBCenter()) + norm * -clip.d))
 		end
 	end
 	
@@ -122,7 +122,7 @@ net.Receive("proper_clipping", function()
 	
 	for i = 1, net.ReadUInt(4) do
 		clips[i] = {
-			net.ReadVector(),
+			Vector(net.ReadFloat(), net.ReadFloat(), net.ReadFloat()),
 			net.ReadFloat(),
 			net.ReadBool(),
 			net.ReadBool()

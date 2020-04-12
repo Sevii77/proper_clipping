@@ -32,7 +32,7 @@ if CLIENT then
 		{op = 1, stage = 0, name = "left_op1_stage0"},
 		{op = 1, stage = 1, name = "left_op1_stage1"},
 		
-		"right"
+		{stage = 0, name = "right"}
 	}
 	
 	function TOOL.BuildCPanel(panel)
@@ -120,7 +120,7 @@ function TOOL:RightClick(tr)
 	local owner = self:GetOwner()
 	local norm_org = norm
 	local norm = norm * (owner:KeyDown(IN_WALK) and -1 or 1)
-	local dist = -norm:Dot(ent:GetPos() - (origin + norm_org * self:GetClientNumber("offset")))
+	local dist = -norm:Dot(ent:LocalToWorld(ent:OBBCenter()) - (origin + norm_org * self:GetClientNumber("offset")))
 	local norm = ent:WorldToLocalAngles(norm:Angle()):Forward() * -1
 	
 	local physics = self:GetClientNumber("physics") ~= 0
