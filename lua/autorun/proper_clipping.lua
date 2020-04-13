@@ -22,7 +22,15 @@ local cvar_physics = CreateConVar("proper_clipping_max_physics", "0", FCVAR_ARCH
 if CLIENT then
 	
 	hook.Add("Think", "proper_clipping_physics", function()
-		for ent, physobj in pairs(ProperClipping.ClippedPhysics) do
+		for ent, _ in pairs(ProperClipping.ClippedPhysics) do
+			local physobj = ent:GetPhysicsObject()
+			
+			if not physobj and not physobj:IsValid() then
+				ProperClipping.ClippedPhysics[ent] = nil
+				
+				continue
+			end
+			
 			physobj:SetPos(ent:GetPos())
 			physobj:SetAngles(ent:GetAngles())
 		end
