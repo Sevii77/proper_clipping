@@ -166,7 +166,7 @@ function ProperClipping.ClipPhysics(ent, norm, dist)
 	local data = ProperClipping.GetPhysObjData(physobj)
 	
 	-- Cull stuff
-	local pos = -norm * dist
+	local pos = norm * dist
 	
 	local new = {}
 	for _, convex in ipairs(physobj:GetMeshConvexes()) do
