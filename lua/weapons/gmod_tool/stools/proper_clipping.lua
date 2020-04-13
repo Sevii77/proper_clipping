@@ -70,10 +70,6 @@ end
 
 ----------------------------------------
 
--- local instead of part of tool so that when you regain the toolgun it keeps em
-local origin = Vector()
-local norm = Vector(0, 0, 1)
-
 function TOOL:Think()
 	local new = math.floor(self:GetClientNumber("mode"))
 	
@@ -95,14 +91,14 @@ function TOOL:LeftClick(tr)
 	end
 	
 	if op == 0 then
-		norm = tr.HitNormal
-		origin = tr.HitPos
+		self.norm = tr.HitNormal
+		self.origin = tr.HitPos
 	elseif op == 1 then
 		if stage == 0 then
-			origin = tr.HitPos
+			self.origin = tr.HitPos
 			self:SetStage(1)
 		else
-			norm = (tr.HitPos - origin):GetNormalized()
+			self.norm = (tr.HitPos - self.origin):GetNormalized()
 			self:SetStage(0)
 		end
 	end
@@ -111,6 +107,7 @@ function TOOL:LeftClick(tr)
 end
 
 function TOOL:RightClick(tr)
+	if not self.origin then return end
 	if self:GetStage() == 1 then return end
 	local ent = tr.Entity
 	if not ent or not ent:IsValid() then return end
@@ -118,9 +115,8 @@ function TOOL:RightClick(tr)
 	if CLIENT then return true end
 	
 	local owner = self:GetOwner()
-	local norm_org = norm
-	local norm = norm * (owner:KeyDown(IN_WALK) and -1 or 1)
-	local dist = norm:Dot(ent:GetPos() - (origin + norm_org * self:GetClientNumber("offset")))
+	local norm = self.norm * (owner:KeyDown(IN_WALK) and -1 or 1)
+	local dist = norm:Dot(ent:GetPos() - (self.origin + self.norm * self:GetClientNumber("offset")))
 	local norm = ent:WorldToLocalAngles(norm:Angle()):Forward() * -1
 	
 	local physics = self:GetClientNumber("physics") ~= 0
@@ -180,6 +176,10 @@ if CLIENT then
 		if not wep or not wep:IsValid() or wep:GetClass() ~= "gmod_tool" then return end
 		local tool = ply:GetTool("proper_clipping")
 		if not tool then return end
+		
+		local origin = tool.origin
+		if not tool.origin then return end
+		local norm = tool.norm
 		
 		local tr = ply:GetEyeTrace()
 		local ent = tr.Entity
