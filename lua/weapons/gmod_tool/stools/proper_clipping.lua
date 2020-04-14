@@ -107,7 +107,7 @@ function TOOL:LeftClick(tr)
 end
 
 function TOOL:RightClick(tr)
-	if not self.origin then return end
+	if not self.norm then return end
 	if self:GetStage() == 1 then return end
 	local ent = tr.Entity
 	if not ent or not ent:IsValid() then return end
@@ -178,8 +178,8 @@ if CLIENT then
 		if not tool then return end
 		
 		local origin = tool.origin
-		if not tool.origin then return end
 		local norm = tool.norm
+		if not norm then return end
 		
 		local tr = ply:GetEyeTrace()
 		local ent = tr.Entity

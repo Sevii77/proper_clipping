@@ -23,8 +23,13 @@ if CLIENT then
 	
 	hook.Add("Think", "proper_clipping_physics", function()
 		for ent, _ in pairs(ProperClipping.ClippedPhysics) do
-			local physobj = ent:GetPhysicsObject()
+			if not ent:IsValid() then
+				ProperClipping.ClippedPhysics[ent] = nil
+				
+				continue
+			end
 			
+			local physobj = ent:GetPhysicsObject()
 			if not physobj and not physobj:IsValid() then
 				ProperClipping.ClippedPhysics[ent] = nil
 				
@@ -189,9 +194,6 @@ function ProperClipping.ClipPhysics(ent, norm, dist)
 	
 	if CLIENT then
 		ProperClipping.ClippedPhysics[ent] = ent:GetPhysicsObject()
-		ent:CallOnRemove("proper_clipping_physics", function()
-			ProperClipping.ClippedPhysics[ent] = nil
-		end)
 	end
 	
 	-- Apply stored properties to the new physobj

@@ -117,6 +117,8 @@ net.Receive("proper_clipping", function()
 		
 		ProperClipping.RemoveVisualClips(ent)
 		ProperClipping.ResetPhysics(ent)
+		
+		return
 	end
 	
 	local clips = {}
