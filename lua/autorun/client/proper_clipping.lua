@@ -48,6 +48,11 @@ local function renderOverride(self)
 end
 
 function ProperClipping.AddVisualClip(ent, norm, dist, inside)
+	if not ent.Clipped then
+		ent.RenderOverride_preclipping = ent.RenderOverride
+		ent.RenderOverride = renderOverride
+	end
+	
 	ent.Clipped = true
 	ent.ClipData = ent.ClipData or {}
 	table.insert(ent.ClipData, {
@@ -58,9 +63,6 @@ function ProperClipping.AddVisualClip(ent, norm, dist, inside)
 		inside = inside,
 		new = true -- still no clue what this is for, meh w/e
 	})
-	
-	ent.RenderOverride_preclipping = ent.RenderOverride
-	ent.RenderOverride = renderOverride
 end
 
 function ProperClipping.RemoveVisualClips(ent)
