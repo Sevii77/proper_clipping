@@ -66,7 +66,7 @@ function ProperClipping.RemoveClip(ent, index)
 		ProperClipping.ResetPhysics(ent)
 		
 		for _, clip in ipairs(ent.ClipData) do
-			ProperClipping.ClipPhysics(ent, clip.norm, clip.dist)
+			ProperClipping.ClipPhysics(ent, clip.norm, clip.d)
 		end
 	end
 	
