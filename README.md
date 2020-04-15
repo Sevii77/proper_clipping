@@ -2,7 +2,7 @@
 
 ---
 
-Proper Clipping is a visual and physical clipping tool for Garry's Mod with the ability to load in clips from older clipping tools [A](https://steamcommunity.com/sharedfiles/filedetails/?id=106753151) and [B](https://steamcommunity.com/sharedfiles/filedetails/?id=238138995)
+Proper Clipping is a visual and physical clipping tool for Garry's Mod with the ability to load in clips from older clipping tools [A](https://steamcommunity.com/sharedfiles/filedetails/?id=106753151) and [B](https://steamcommunity.com/sharedfiles/filedetails/?id=238138995) while also allowing them to load in clips from Proper Clipping.
 
 Server Convars:
 - proper_clipping_max_physics
