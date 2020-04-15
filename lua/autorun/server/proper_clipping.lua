@@ -75,6 +75,7 @@ function ProperClipping.RemoveClip(ent, index)
 end
 
 function ProperClipping.StoreClips(ent)
+	-- Clips for self
 	local clips = {}
 	for i, clip in ipairs(ent.ClipData) do
 		clips[i] = {
@@ -86,6 +87,24 @@ function ProperClipping.StoreClips(ent)
 	end
 	
 	duplicator.StoreEntityModifier(ent, "proper_clipping", clips)
+	
+	-- Clips for https://steamcommunity.com/sharedfiles/filedetails/?id=106753151
+	local clips = {}
+	for i, clip in ipairs(ent.ClipData) do
+		clips[i] = {
+			n = clip.n,
+			d = clip.norm:Dot(clip.norm * clip.d - ent:OBBCenter()),
+			inside = clip.inside,
+			new = true,
+			proper_clipped = true, -- if this is true, dont load it in because it already exists as proper_clipping ent modif
+		}
+	end
+	
+	duplicator.StoreEntityModifier(ent, "clips", clips)
+	
+	-- Not gonna do the other tool since that can load in clips from the one above anyways
+	-- This could lead to issue by using all 3 tools in a specific order on the same ent
+	-- saving it across different servers and w/e but thats not my issue
 end
 
 function ProperClipping.NetworkClips(ent, ply)
@@ -111,6 +130,26 @@ function ProperClipping.NetworkClips(ent, ply)
 		
 		net.Send(ply or player.GetHumans())
 	end)
+end
+
+function ProperClipping.ClipExists(ent, norm, dist)
+	if not ent.ClipData then return false end
+	
+	local x = math.Round(norm.x, 4)
+	local y = math.Round(norm.y, 4)
+	local z = math.Round(norm.z, 4)
+	local d = math.Round(dist, 2)
+	
+	for _, clip in ipairs(ent.ClipData) do
+		if not math.Round(clip.norm.x, 4) == x then continue end
+		if not math.Round(clip.norm.y, 4) == y then continue end
+		if not math.Round(clip.norm.z, 4) == z then continue end
+		if not math.Round(clip.d, 2) == d then continue end
+		
+		return true
+	end
+	
+	return false
 end
 
 ----------------------------------------
@@ -143,6 +182,7 @@ end)
 
 ----------------------------------------
 
+-- Clips from self
 duplicator.RegisterEntityModifier("proper_clipping", function(ply, ent, data)
 	if not ent or not ent:IsValid() then return end
 	
@@ -155,10 +195,16 @@ duplicator.RegisterEntityModifier("proper_clipping", function(ply, ent, data)
 	local physcount = 0
 	local physmax = ProperClipping.MaxPhysicsClips()
 	
-	if not hook.Run("CanTool", ply, {Entity = ent}, "proper_clipping_physics") then
-		ply:ChatPrint("Not allowed to create physics clips, " .. tostring(ent) .. " will be spawned without any.")
-		
-		physcount = math.huge
+	for _, clip in ipairs(data) do
+		if clip.physics then
+			if not hook.Run("CanTool", ply, {Entity = ent}, "proper_clipping_physics") then
+				ply:ChatPrint("Not allowed to create physics clips, " .. tostring(ent) .. " will be spawned without any.")
+				
+				physcount = math.huge
+			end
+			
+			break
+		end
 	end
 	
 	for _, clip in ipairs(data) do
@@ -185,7 +231,7 @@ local function convert(ent, norm, dist)
 	return norm, norm:Dot(norm * dist + ent:OBBCenter())
 end
 
--- clips from https://steamcommunity.com/sharedfiles/filedetails/?id=106753151
+-- Clips from https://steamcommunity.com/sharedfiles/filedetails/?id=106753151
 duplicator.RegisterEntityModifier("clips", function(ply, ent, data)
 	if not ent or not ent:IsValid() then return end
 	
@@ -199,14 +245,18 @@ duplicator.RegisterEntityModifier("clips", function(ply, ent, data)
 		duplicator.ClearEntityModifier(ent, "clips")
 		
 		for _, clip in ipairs(data) do
-			local norm, dist = convert(ent, clip.n:Forward(), clip.d)
-			
-			ProperClipping.AddClip(ent, norm, dist, clip.inside)
+			if not clip.proper_clipped then
+				local norm, dist = convert(ent, clip.n:Forward(), clip.d)
+				
+				if not ProperClipping.ClipExists(ent, norm, dist) then
+					ProperClipping.AddClip(ent, norm, dist, clip.inside)
+				end
+			end
 		end
 	end)
 end)
 
--- clips from https://steamcommunity.com/sharedfiles/filedetails/?id=238138995
+-- Clips from https://steamcommunity.com/sharedfiles/filedetails/?id=238138995
 local insides = {}
 
 duplicator.RegisterEntityModifier("clipping_all_prop_clips", function(ply, ent, data)
@@ -224,7 +274,9 @@ duplicator.RegisterEntityModifier("clipping_all_prop_clips", function(ply, ent, 
 		for _, clip in ipairs(data) do
 			local norm, dist = convert(ent, clip[1]:Forward(), clip[2])
 			
-			ProperClipping.AddClip(ent, norm, dist, insides[ent])
+			if not ProperClipping.ClipExists(ent, norm, dist) then
+				ProperClipping.AddClip(ent, norm, dist, insides[ent])
+			end
 		end
 		
 		insides[ent] = nil
