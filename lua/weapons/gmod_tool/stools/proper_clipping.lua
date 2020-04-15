@@ -128,6 +128,18 @@ function TOOL:RightClick(tr)
 	
 	ProperClipping.AddClip(ent, norm, dist, owner:KeyDown(IN_SPEED), physics)
 	
+	undo.Create("Proper Clip")
+	undo.AddFunction(function(_, ent, norm, dist)
+		if not ent or not ent:IsValid() then return end
+		
+		local exists, index = ProperClipping.ClipExists(ent, norm, dist)
+		if exists then
+			ProperClipping.RemoveClip(ent, index)
+		end
+	end, ent, norm, dist)
+	undo.SetPlayer(owner)
+	undo.Finish()
+	
 	return true
 end
 

@@ -57,7 +57,7 @@ function ProperClipping.RemoveClip(ent, index)
 	table.remove(ent.ClipData, index)
 	
 	if #ent.ClipData == 0 then
-		ProperClipping.RemoveVisualClips(ent)
+		ProperClipping.RemoveClips(ent)
 		
 		return
 	end
@@ -140,13 +140,13 @@ function ProperClipping.ClipExists(ent, norm, dist)
 	local z = math.Round(norm.z, 4)
 	local d = math.Round(dist, 2)
 	
-	for _, clip in ipairs(ent.ClipData) do
+	for i, clip in ipairs(ent.ClipData) do
 		if not math.Round(clip.norm.x, 4) == x then continue end
 		if not math.Round(clip.norm.y, 4) == y then continue end
 		if not math.Round(clip.norm.z, 4) == z then continue end
 		if not math.Round(clip.d, 2) == d then continue end
 		
-		return true
+		return true, i
 	end
 	
 	return false
