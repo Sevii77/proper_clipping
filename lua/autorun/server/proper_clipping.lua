@@ -141,10 +141,10 @@ function ProperClipping.ClipExists(ent, norm, dist)
 	local d = math.Round(dist, 2)
 	
 	for i, clip in ipairs(ent.ClipData) do
-		if not math.Round(clip.norm.x, 4) == x then continue end
-		if not math.Round(clip.norm.y, 4) == y then continue end
-		if not math.Round(clip.norm.z, 4) == z then continue end
-		if not math.Round(clip.d, 2) == d then continue end
+		if math.Round(clip.norm.x, 4) ~= x then continue end
+		if math.Round(clip.norm.y, 4) ~= y then continue end
+		if math.Round(clip.norm.z, 4) ~= z then continue end
+		if math.Round(clip.d, 2) ~= d then continue end
 		
 		return true, i
 	end
