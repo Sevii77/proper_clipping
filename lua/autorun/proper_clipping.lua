@@ -30,7 +30,7 @@ if CLIENT then
 			end
 			
 			local physobj = ent:GetPhysicsObject()
-			if not physobj and not physobj:IsValid() then
+			if not physobj or not physobj:IsValid() then
 				ProperClipping.ClippedPhysics[ent] = nil
 				
 				continue
