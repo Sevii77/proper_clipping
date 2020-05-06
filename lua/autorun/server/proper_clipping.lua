@@ -3,7 +3,13 @@ ProperClipping.ClippedEntities = {}
 
 util.AddNetworkString("proper_clipping")
 
+local cvar_visuals = CreateConVar("proper_clipping_max_visual_server", "6", FCVAR_ARCHIVE, "Max visual clips a entity can have, client can still adjust how many will be visible for them, this is just for networking and serverside", 0, 6)
+
 ----------------------------------------
+
+function ProperClipping.CanAddClip(ent, ply)
+	return hook.Run("CanTool", ply, {Entity = ent}, "proper_clipping") and true or false
+end
 
 function ProperClipping.AddClip(ent, norm, dist, inside, physics)
 	if not ProperClipping.ClippedEntities[ent] then
@@ -15,6 +21,8 @@ function ProperClipping.AddClip(ent, norm, dist, inside, physics)
 	
 	ent.Clipped = true
 	ent.ClipData = ent.ClipData or {}
+	
+	if #ent.ClipData >= cvar_visuals:GetInt() then return false end
 	
 	table.insert(ent.ClipData, {
 		norm = norm,
@@ -31,10 +39,12 @@ function ProperClipping.AddClip(ent, norm, dist, inside, physics)
 	
 	ProperClipping.StoreClips(ent)
 	ProperClipping.NetworkClips(ent)
+	
+	return true
 end
 
 function ProperClipping.RemoveClips(ent)
-	if not ent.ClipData then return end
+	if not ent.ClipData then return false end
 	
 	ProperClipping.ClippedEntities[ent] = nil
 	ent:RemoveCallOnRemove("proper_clipping")
@@ -46,11 +56,13 @@ function ProperClipping.RemoveClips(ent)
 	
 	ProperClipping.ResetPhysics(ent)
 	ProperClipping.NetworkClips(ent)
+	
+	return true
 end
 
 function ProperClipping.RemoveClip(ent, index)
-	if not ent.ClipData then return end
-	if not ent.ClipData[index] then return end
+	if not ent.ClipData then return false end
+	if not ent.ClipData[index] then return false end
 	
 	local clip = ent.ClipData[index]
 	
@@ -59,7 +71,7 @@ function ProperClipping.RemoveClip(ent, index)
 	if #ent.ClipData == 0 then
 		ProperClipping.RemoveClips(ent)
 		
-		return
+		return true
 	end
 	
 	if clip.physics then
@@ -72,6 +84,8 @@ function ProperClipping.RemoveClip(ent, index)
 	
 	ProperClipping.StoreClips(ent)
 	ProperClipping.NetworkClips(ent)
+	
+	return true
 end
 
 function ProperClipping.StoreClips(ent)

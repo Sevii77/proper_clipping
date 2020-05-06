@@ -92,9 +92,7 @@ function ProperClipping.MaxPhysicsClips()
 	return cvar_physics:GetInt()
 end
 
-function ProperClipping.CanAddPhysicsClip(ent, ply)
-	if not hook.Run("CanTool", ply, {Entity = ent}, "proper_clipping_physics") then return false end
-	
+function ProperClipping.PhysicsClipsLeft(ent)
 	local physcount = 0
 	if ent.ClipData then
 		for _, clip in ipairs(ent.ClipData) do
@@ -104,7 +102,14 @@ function ProperClipping.CanAddPhysicsClip(ent, ply)
 		end
 	end
 	
-	return physcount < cvar_physics:GetInt()
+	local max = cvar_physics:GetInt()
+	return physcount < max, max - physcount
+end
+
+function ProperClipping.CanAddPhysicsClip(ent, ply)
+	if not hook.Run("CanTool", ply, {Entity = ent}, "proper_clipping_physics") then return false, 0 end
+	
+	return ProperClipping.PhysicsClipsLeft(ent)
 end
 
 function ProperClipping.GetPhysObjData(physobj)
@@ -139,7 +144,7 @@ function ProperClipping.ApplyPhysObjData(physobj, data)
 		
 		timer.Simple(0, function()
 			for id, constraint in pairs(data.constraints) do
-				print(duplicator.CreateConstraintFromTable(constraint, data.constraint_ents))
+				duplicator.CreateConstraintFromTable(constraint, data.constraint_ents)
 			end
 		end)
 	else
