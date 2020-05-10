@@ -53,6 +53,7 @@ function ProperClipping.RemoveClips(ent)
 	ent.ClipData = nil
 	
 	duplicator.ClearEntityModifier(ent, "proper_clipping")
+	duplicator.ClearEntityModifier(ent, "clips")
 	
 	ProperClipping.ResetPhysics(ent)
 	ProperClipping.NetworkClips(ent)
@@ -109,8 +110,7 @@ function ProperClipping.StoreClips(ent)
 			n = clip.n,
 			d = clip.norm:Dot(clip.norm * clip.d - ent:OBBCenter()),
 			inside = clip.inside,
-			new = true,
-			proper_clipped = true, -- if this is true, dont load it in because it already exists as proper_clipping ent modif
+			new = true
 		}
 	end
 	
@@ -221,19 +221,26 @@ duplicator.RegisterEntityModifier("proper_clipping", function(ply, ent, data)
 		end
 	end
 	
-	for _, clip in ipairs(data) do
-		local norm, dist, inside, physics = unpack(clip)
-		
-		if physics then
-			if physcount >= physmax then
-				physics = false
+	timer.Simple(0.5, function()
+		for _, clip in ipairs(data) do
+			local norm, dist, inside, physics = unpack(clip)
+			local exists, index = ProperClipping.ClipExists(ent, norm, dist)
+			
+			if physics then
+				if physcount >= physmax then
+					physics = false
+				else
+					ProperClipping.RemoveClip(ent, index)
+				end
+				
+				physcount = physcount + 1
+			elseif exists then
+				continue
 			end
 			
-			physcount = physcount + 1
+			ProperClipping.AddClip(ent, norm, dist, inside, physics)
 		end
-		
-		ProperClipping.AddClip(ent, norm, dist, inside, physics)
-	end
+	end)
 	
 	if physcount > physmax and physcount ~= math.huge then
 		ply:ChatPrint("Max physics clips per entity reached (max " .. physmax .. "), " .. tostring(ent) .. " will only have " .. physmax .. " instead of " .. physcount .. ".")
@@ -255,16 +262,14 @@ duplicator.RegisterEntityModifier("clips", function(ply, ent, data)
 		return
 	end
 	
+	duplicator.ClearEntityModifier(ent, "clips")
+	
 	timer.Simple(0.5, function()
-		duplicator.ClearEntityModifier(ent, "clips")
-		
 		for _, clip in ipairs(data) do
-			if not clip.proper_clipped then
-				local norm, dist = convert(ent, clip.n:Forward(), clip.d)
-				
-				if not ProperClipping.ClipExists(ent, norm, dist) then
-					ProperClipping.AddClip(ent, norm, dist, clip.inside)
-				end
+			local norm, dist = convert(ent, clip.n:Forward(), clip.d)
+			
+			if not ProperClipping.ClipExists(ent, norm, dist) then
+				ProperClipping.AddClip(ent, norm, dist, clip.inside)
 			end
 		end
 	end)
@@ -282,9 +287,9 @@ duplicator.RegisterEntityModifier("clipping_all_prop_clips", function(ply, ent, 
 		return
 	end
 	
+	duplicator.ClearEntityModifier(ent, "clipping_all_prop_clips")
+	
 	timer.Simple(0.5, function()
-		duplicator.ClearEntityModifier(ent, "clipping_all_prop_clips")
-		
 		for _, clip in ipairs(data) do
 			local norm, dist = convert(ent, clip[1]:Forward(), clip[2])
 			
@@ -313,13 +318,14 @@ duplicator.RegisterEntityModifier("clipping_render_inside", function(ply, ent, d
 		end
 		
 		if changed then
+			ProperClipping.StoreClips(ent)
 			ProperClipping.NetworkClips(ent)
 		end
 	end
 	
+	duplicator.ClearEntityModifier(ent, "clipping_render_inside")
+	
 	timer.Simple(1, function()
-		duplicator.ClearEntityModifier(ent, "clipping_render_inside")
-		
 		insides[ent] = nil
 	end)
 end)
