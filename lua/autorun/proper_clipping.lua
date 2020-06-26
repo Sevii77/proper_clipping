@@ -111,8 +111,8 @@ function ProperClipping.PhysicsClipsLeft(ent)
 end
 
 function ProperClipping.CanAddPhysicsClip(ent, ply)
-	if not class_whitelist[ent:GetClass()] and not ent:IsScripted() then return false, ProperClipping.PhysicsClipsLeft(ent) end
-	if hook.Run("ProperClippingCanPhysicsClip", ent, ply) == false then return false, ProperClipping.PhysicsClipsLeft(ent) end
+	if not class_whitelist[ent:GetClass()] and not ent:IsScripted() then return false, -1 end
+	if hook.Run("ProperClippingCanPhysicsClip", ent, ply) == false then return false, -1 end
 	if not hook.Run("CanTool", ply, {Entity = ent}, "proper_clipping_physics") then return false, 0 end
 	
 	return ProperClipping.PhysicsClipsLeft(ent)
