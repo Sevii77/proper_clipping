@@ -121,9 +121,18 @@ function TOOL:RightClick(tr)
 	
 	local physics = self:GetClientNumber("physics") ~= 0
 	
-	if physics and not ProperClipping.CanAddPhysicsClip(ent, owner) then
-		owner:ChatPrint("Max physics clips per entity reached (max " .. ProperClipping.MaxPhysicsClips() .. ")")
-		physics = false
+	if physics then
+		local valid, left = ProperClipping.CanAddPhysicsClip(ent, owner)
+		
+		if not valid then
+			if left == 0 then
+				owner:ChatPrint("Max physics clips per entity reached (max " .. ProperClipping.MaxPhysicsClips() .. ")")
+			else
+				owner:ChatPrint("Entity cannot be physically clipped")
+			end
+			
+			physics = false
+		end
 	end
 	
 	ProperClipping.AddClip(ent, norm, dist, owner:KeyDown(IN_SPEED), physics)

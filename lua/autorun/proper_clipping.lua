@@ -7,7 +7,7 @@
 	
 	This has been somewhat fixed? Requires some more testing to be sure.
 	
-	Default limit is 0 for this reason
+	Default limit is 0 for this reason (not anymore, lets hope shit dont break)
 	
 	[x] TODO: try to fix funky behavour (done?)
 ]]
@@ -15,7 +15,11 @@
 ProperClipping = ProperClipping or {}
 ProperClipping.ClippedPhysics = {}
 
-local cvar_physics = CreateConVar("proper_clipping_max_physics", "0", FCVAR_ARCHIVE, "Max physical clips a entity can have", 0, 8)
+local cvar_physics = CreateConVar("proper_clipping_max_physics", "0", FCVAR_ARCHIVE, "Max physical clips a entity can have", 2, 8)
+
+local class_whitelist = {
+	prop_physics = true
+}
 
 ----------------------------------------
 
@@ -107,6 +111,8 @@ function ProperClipping.PhysicsClipsLeft(ent)
 end
 
 function ProperClipping.CanAddPhysicsClip(ent, ply)
+	if not class_whitelist[ent:GetClass()] and not ent:IsScripted() then return false, ProperClipping.PhysicsClipsLeft(ent) end
+	if hook.Run("ProperClippingCanPhysicsClip", ent, ply) == false then return false, ProperClipping.PhysicsClipsLeft(ent) end
 	if not hook.Run("CanTool", ply, {Entity = ent}, "proper_clipping_physics") then return false, 0 end
 	
 	return ProperClipping.PhysicsClipsLeft(ent)
@@ -154,6 +160,9 @@ function ProperClipping.ApplyPhysObjData(physobj, data)
 end
 
 function ProperClipping.ClipPhysics(ent, norm, dist)
+	if not class_whitelist[ent:GetClass()] and not ent:IsScripted() then return end
+	if hook.Run("ProperClippingCanPhysicsClip", ent, ply) == false then return end
+	
 	local physobj
 	
 	if SERVER then
@@ -170,6 +179,10 @@ function ProperClipping.ClipPhysics(ent, norm, dist)
 	
 	if not physobj or not physobj:IsValid() then return end
 	
+	meshes = physobj:GetMeshConvexes()
+	
+	if not meshes then return end
+	
 	ent.PhysicsClipped = true
 	
 	-- Store properties to copy over to the new physobj
@@ -179,7 +192,7 @@ function ProperClipping.ClipPhysics(ent, norm, dist)
 	local pos = norm * dist
 	
 	local new = {}
-	for _, convex in ipairs(physobj:GetMeshConvexes()) do
+	for _, convex in ipairs(meshes) do
 		local vertices = {}
 		for _, vertex in ipairs(convex) do
 			table.insert(vertices, vertex.pos)
