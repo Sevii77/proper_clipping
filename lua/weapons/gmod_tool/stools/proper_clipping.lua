@@ -182,8 +182,6 @@ if CLIENT then
 	local last_ent
 	
 	hook.Add("PostDrawOpaqueRenderables", "proper_clipping", function(depth, skybox)
-		if skybox then return end
-		
 		if last_ent and last_ent:IsValid() then
 			last_ent:SetNoDraw(false)
 			last_ent:CreateShadow()
