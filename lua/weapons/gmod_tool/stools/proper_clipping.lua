@@ -135,7 +135,6 @@ if game.SinglePlayer() then
 		util.AddNetworkString("proper_clipping_gotta_love_predicted_hooks")
 	else
 		net.Receive("proper_clipping_gotta_love_predicted_hooks", function()
-			print("received")
 			local tool = LocalPlayer():GetTool("proper_clipping")
 			if not tool then return end
 			
