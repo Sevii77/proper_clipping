@@ -103,7 +103,59 @@ function TOOL:LeftClick(tr)
 		end
 	end
 	
+	if game.SinglePlayer() then
+		net.Start("proper_clipping_gotta_love_predicted_hooks")
+		
+		if self.origin then
+			net.WriteBool(true)
+			net.WriteFloat(self.origin.x)
+			net.WriteFloat(self.origin.y)
+			net.WriteFloat(self.origin.z)
+		else
+			net.WriteBool(false)
+		end
+		
+		if self.norm then
+			net.WriteBool(true)
+			net.WriteFloat(self.norm.x)
+			net.WriteFloat(self.norm.y)
+			net.WriteFloat(self.norm.z)
+		else
+			net.WriteBool(false)
+		end
+		
+		net.Send(self:GetOwner())
+	end
+	
 	return true
+end
+
+if game.SinglePlayer() then
+	if SERVER then
+		util.AddNetworkString("proper_clipping_gotta_love_predicted_hooks")
+	else
+		net.Receive("proper_clipping_gotta_love_predicted_hooks", function()
+			print("received")
+			local tool = LocalPlayer():GetTool("proper_clipping")
+			if not tool then return end
+			
+			if net.ReadBool() then
+				tool.origin = Vector(
+					net.ReadFloat(),
+					net.ReadFloat(),
+					net.ReadFloat()
+				)
+			end
+			
+			if net.ReadBool() then
+				tool.norm = Vector(
+					net.ReadFloat(),
+					net.ReadFloat(),
+					net.ReadFloat()
+				)
+			end
+		end)
+	end
 end
 
 function TOOL:RightClick(tr)
