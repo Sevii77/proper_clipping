@@ -170,9 +170,9 @@ end
 
 hook.Add("PlayerInitialSpawn", "proper_clipping", function(ply)
 	local id = "proper_clipping_" .. ply:EntIndex()
-	hook.Add("CreateMove", id, function(ply2, _, cmd)
+	hook.Add("SetupMove", id, function(ply2, _, cmd)
 		if not ply:IsValid() then
-			hook.Remove("CreateMove", id)
+			hook.Remove("SetupMove", id)
 			
 			return
 		end
@@ -181,7 +181,7 @@ hook.Add("PlayerInitialSpawn", "proper_clipping", function(ply)
 		if cmd:IsForced() then return end
 		
 		local ent_count, clip_count = 0, 0
-		for ent, _ in pairs(ProperClipping.ClippedEntities) do
+		for ent in pairs(ProperClipping.ClippedEntities) do
 			ProperClipping.NetworkClips(ent, ply)
 			ent_count = ent_count + 1
 			clip_count = clip_count + #ent.ClipData
@@ -189,10 +189,9 @@ hook.Add("PlayerInitialSpawn", "proper_clipping", function(ply)
 		
 		print("Sending " .. clip_count .. " clips from " .. ent_count .. " entities to " .. ply:GetName())
 		
-		hook.Remove("CreateMove", id)
+		hook.Remove("SetupMove", id)
 	end)
 end)
-
 
 ----------------------------------------
 

@@ -47,20 +47,22 @@ local function renderOverride(self)
 	render.EnableClipping(prev)
 end
 
-function ProperClipping.AddVisualClip(ent, norm, dist, inside)
+function ProperClipping.AddVisualClip(ent, norm, dist, inside, physics)
 	if not ent.Clipped then
 		ent.RenderOverride_preclipping = ent.RenderOverride
 		ent.RenderOverride = renderOverride
+		
+		ent.Clipped = true
+		ent.ClipData = {}
 	end
 	
-	ent.Clipped = true
-	ent.ClipData = ent.ClipData or {}
 	table.insert(ent.ClipData, {
 		origin = norm * dist,
 		norm = norm,
 		n = norm:Angle(),
 		d = dist,
 		inside = inside,
+		physics = physics,
 		new = true -- still no clue what this is for, meh w/e
 	})
 end
@@ -81,7 +83,7 @@ local clip_queue = {}
 
 local function attemptClip(id, clips)
 	local ent = Entity(id)
-	if not ent or not ent:IsValid() then return false end
+	if not IsValid(ent) then return false end
 	
 	ProperClipping.RemoveVisualClips(ent)
 	ProperClipping.ResetPhysics(ent)
@@ -89,7 +91,7 @@ local function attemptClip(id, clips)
 	for _, clip in ipairs(clips) do
 		local norm, dist, inside, physics = unpack(clip)
 		
-		ProperClipping.AddVisualClip(ent, norm, dist, inside)
+		ProperClipping.AddVisualClip(ent, norm, dist, inside, physics)
 		
 		if physics then
 			ProperClipping.ClipPhysics(ent, norm, dist)
@@ -115,7 +117,7 @@ net.Receive("proper_clipping", function()
 		clip_queue[id] = nil
 		
 		local ent = Entity(id)
-		if not ent or not ent:IsValid() then return end
+		if IsValid(ent) then return end
 		
 		ProperClipping.RemoveVisualClips(ent)
 		ProperClipping.ResetPhysics(ent)
