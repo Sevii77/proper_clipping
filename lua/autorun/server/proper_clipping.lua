@@ -255,6 +255,7 @@ end
 -- Clips from https://steamcommunity.com/sharedfiles/filedetails/?id=106753151
 duplicator.RegisterEntityModifier("clips", function(ply, ent, data)
 	if not ent or not ent:IsValid() then return end
+	if ent.EntityMods.proper_clipping then return end -- Already using the newer method, abort.
 	
 	if not hook.Run("CanTool", ply, {Entity = ent}, "proper_clipping") then
 		ply:ChatPrint("Not allowed to create visual clips, " .. tostring(ent) .. " will be spawned without any.")
