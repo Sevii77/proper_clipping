@@ -12,8 +12,9 @@
 	[x] TODO: try to fix funky behavour (done?)
 ]]
 
-ProperClipping = ProperClipping or {}
-ProperClipping.ClippedPhysics = {}
+ProperClipping = ProperClipping or {
+	ClippedPhysics = {}
+}
 
 local cvar_physics = CreateConVar("proper_clipping_max_physics", "2", FCVAR_ARCHIVE, "Max physical clips a entity can have", 0, 8)
 
@@ -24,31 +25,33 @@ local class_whitelist = {
 ----------------------------------------
 
 if CLIENT then
-	
+
 	hook.Add("Think", "proper_clipping_physics", function()
-		for ent, _ in pairs(ProperClipping.ClippedPhysics) do
-			if not ent:IsValid() then
-				ProperClipping.ClippedPhysics[ent] = nil
-				
-				continue
-			end
-			
+		for ent in pairs(ProperClipping.ClippedPhysics) do
 			local physobj = ent:GetPhysicsObject()
-			if not physobj or not physobj:IsValid() then
+
+			if not IsValid(physobj) then
 				ProperClipping.ClippedPhysics[ent] = nil
-				
-				continue
+			else
+				physobj:SetPos(ent:GetPos())
+				physobj:SetAngles(ent:GetAngles())
 			end
-			
-			physobj:SetPos(ent:GetPos())
-			physobj:SetAngles(ent:GetAngles())
 		end
 	end)
 
-	hook.Add("PhysgunPickup", "proper_clipping_physics", function(ply, ent)
+	hook.Add("PhysgunPickup", "proper_clipping_physics", function(_, ent)
 		if ProperClipping.ClippedPhysics[ent] then return false end
 	end)
-	
+
+	hook.Add("NetworkEntityCreated", "proper_clipping_physics", function(ent)
+		if ent.PhysicsClipped then
+			for _, Clip in ipairs(ent.ClipData) do
+				if Clip.physics then
+					ProperClipping.ClipPhysics(ent, Clip.norm, Clip.d)
+				end
+			end
+		end
+	end)
 end
 
 ----------------------------------------
@@ -162,82 +165,84 @@ end
 function ProperClipping.ClipPhysics(ent, norm, dist)
 	if not class_whitelist[ent:GetClass()] and not ent:IsScripted() then return end
 	if hook.Run("ProperClippingCanPhysicsClip", ent, ply) == false then return end
-	
-	local physobj
-	
-	if SERVER then
+
+	local physobj = ent:GetPhysicsObject()
+
+	if CLIENT and not IsValid(physobj) then
+		ent:PhysicsInit(SOLID_VPHYSICS)
+
 		physobj = ent:GetPhysicsObject()
-	else
-		local mdl = ents.CreateClientProp()
-		mdl:SetModel(ent:GetModel())
-		mdl:PhysicsInit(SOLID_VPHYSICS)
-		mdl:Spawn()
-		
-		physobj = mdl:GetPhysicsObject()
-		mdl:Remove()
 	end
-	
-	if not physobj or not physobj:IsValid() then return end
-	
-	meshes = physobj:GetMeshConvexes()
-	
+
+	if not IsValid(physobj) then return end
+
+	local meshes = physobj:GetMeshConvexes()
+
 	if not meshes then return end
-	
+
 	ent.PhysicsClipped = true
-	
+
 	-- Store properties to copy over to the new physobj
 	local data = ProperClipping.GetPhysObjData(physobj)
-	
+
 	-- Cull stuff
 	local pos = norm * dist
-	
+
 	local new = {}
 	for _, convex in ipairs(meshes) do
 		local vertices = {}
 		for _, vertex in ipairs(convex) do
 			table.insert(vertices, vertex.pos)
 		end
-		
+
 		vertices = clipPlane3D(vertices, pos, norm)
-		if #vertices > 0 then
+		if next(vertices) then
 			table.insert(new, vertices)
 		end
 	end
-	
+
 	-- Make new one
 	if not ent:PhysicsInitMultiConvex(new) then return end
 	ent:SetMoveType(MOVETYPE_VPHYSICS)
 	ent:SetSolid(SOLID_VPHYSICS)
 	ent:EnableCustomCollisions(true)
-	
-	if CLIENT then
-		ProperClipping.ClippedPhysics[ent] = ent:GetPhysicsObject()
-	end
-	
+
+	physobj = ent:GetPhysicsObject()
+
 	-- Apply stored properties to the new physobj
-	ProperClipping.ApplyPhysObjData(ent:GetPhysicsObject(), data)
+	ProperClipping.ApplyPhysObjData(physobj, data)
+
+	if CLIENT then
+		ProperClipping.ClippedPhysics[ent] = physobj
+
+		ent:CallOnRemove("proper_clipping", function()
+			ProperClipping.ClippedPhysics[ent] = nil
+		end)
+	end
 end
 
 function ProperClipping.ResetPhysics(ent)
 	if not ent.PhysicsClipped then return end
-	
+
 	ent.PhysicsClipped = nil
-	
+
 	local physobj = ent:GetPhysicsObject()
-	local data
-	if physobj:IsValid() then
-		data = ProperClipping.GetPhysObjData(physobj)
-	end
-	
+	local data = IsValid(physobj) and ProperClipping.GetPhysObjData(physobj)
+
+	-- Amazing hack that fixes the physics object, why does this work?
+	ent:SetModel(ent:GetModel())
+
 	if not ent:PhysicsInit(SOLID_VPHYSICS) then return end
 	ent:SetMoveType(MOVETYPE_VPHYSICS)
-	ent:SetSolid(SOLID_VPHYSICS)
-	
+	ent:EnableCustomCollisions(false)
+
+	physobj = ent:GetPhysicsObject()
+
 	if data then
-		ProperClipping.ApplyPhysObjData(ent:GetPhysicsObject(), data)
+		ProperClipping.ApplyPhysObjData(physobj, data)
 	end
-	
+
 	if CLIENT then
-		ProperClipping.ClippedPhysics[ent] = ent:GetPhysicsObject()
+		ProperClipping.ClippedPhysics[ent] = physobj
 	end
 end
