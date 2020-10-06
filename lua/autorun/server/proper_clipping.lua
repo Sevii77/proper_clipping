@@ -181,7 +181,7 @@ hook.Add("PlayerInitialSpawn", "proper_clipping", function(ply)
 		if cmd:IsForced() then return end
 		
 		local ent_count, clip_count = 0, 0
-		for ent, _ in pairs(ProperClipping.ClippedEntities) do
+		for ent in pairs(ProperClipping.ClippedEntities) do
 			ProperClipping.NetworkClips(ent, ply)
 			ent_count = ent_count + 1
 			clip_count = clip_count + #ent.ClipData

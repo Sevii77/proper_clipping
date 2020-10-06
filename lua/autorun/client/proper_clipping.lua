@@ -51,11 +51,11 @@ function ProperClipping.AddVisualClip(ent, norm, dist, inside, physics)
 	if not ent.Clipped then
 		ent.RenderOverride_preclipping = ent.RenderOverride
 		ent.RenderOverride = renderOverride
-
+		
 		ent.Clipped = true
 		ent.ClipData = {}
 	end
-
+	
 	table.insert(ent.ClipData, {
 		origin = norm * dist,
 		norm = norm,
@@ -83,22 +83,21 @@ local clip_queue = {}
 
 local function attemptClip(id, clips)
 	local ent = Entity(id)
-
 	if not IsValid(ent) then return false end
-
+	
 	ProperClipping.RemoveVisualClips(ent)
 	ProperClipping.ResetPhysics(ent)
-
+	
 	for _, clip in ipairs(clips) do
 		local norm, dist, inside, physics = unpack(clip)
-
+		
 		ProperClipping.AddVisualClip(ent, norm, dist, inside, physics)
-
+		
 		if physics then
 			ProperClipping.ClipPhysics(ent, norm, dist)
 		end
 	end
-
+	
 	return true
 end
 
@@ -113,22 +112,21 @@ end)
 net.Receive("proper_clipping", function()
 	local id = net.ReadUInt(14)
 	local add = net.ReadBool()
-
+	
 	if not add then
 		clip_queue[id] = nil
-
+		
 		local ent = Entity(id)
-
 		if IsValid(ent) then return end
-
+		
 		ProperClipping.RemoveVisualClips(ent)
 		ProperClipping.ResetPhysics(ent)
-
+		
 		return
 	end
-
+	
 	local clips = {}
-
+	
 	for i = 1, net.ReadUInt(4) do
 		clips[i] = {
 			Vector(net.ReadFloat(), net.ReadFloat(), net.ReadFloat()),
@@ -137,7 +135,7 @@ net.Receive("proper_clipping", function()
 			net.ReadBool()
 		}
 	end
-
+	
 	if not attemptClip(id, clips) then
 		clip_queue[id] = clips
 	end
