@@ -69,7 +69,7 @@ function ProperClipping.RemoveClip(ent, index)
 	
 	table.remove(ent.ClipData, index)
 	
-	if #ent.ClipData == 0 then
+	if not next(ent.ClipData) then
 		ProperClipping.RemoveClips(ent)
 		
 		return true
@@ -197,7 +197,7 @@ end)
 
 -- Clips from self
 duplicator.RegisterEntityModifier("proper_clipping", function(ply, ent, data)
-	if not ent or not ent:IsValid() then return end
+	if not IsValid(ent) then return end
 	
 	if not hook.Run("CanTool", ply, {Entity = ent}, "proper_clipping") then
 		ply:ChatPrint("Not allowed to create visual clips, " .. tostring(ent) .. " will be spawned without any.")
@@ -219,28 +219,26 @@ duplicator.RegisterEntityModifier("proper_clipping", function(ply, ent, data)
 			break
 		end
 	end
-	
-	timer.Simple(0.5, function()
-		for _, clip in ipairs(data) do
-			local norm, dist, inside, physics = unpack(clip)
-			local exists, index = ProperClipping.ClipExists(ent, norm, dist)
-			
-			if physics then
-				if physcount >= physmax then
-					physics = false
-				else
-					ProperClipping.RemoveClip(ent, index)
-				end
-				
-				physcount = physcount + 1
-			elseif exists then
-				continue
+
+	for _, clip in ipairs(data) do
+		local norm, dist, inside, physics = unpack(clip)
+		local exists, index = ProperClipping.ClipExists(ent, norm, dist)
+
+		if physics then
+			physcount = physcount + 1
+
+			if physcount > physmax then
+				physics = false
+			elseif index then
+				ProperClipping.RemoveClip(ent, index)
 			end
-			
+		end
+
+		if not exists or physics then
 			ProperClipping.AddClip(ent, norm, dist, inside, physics)
 		end
-	end)
-	
+	end
+
 	if physcount > physmax and physcount ~= math.huge then
 		ply:ChatPrint("Max physics clips per entity reached (max " .. physmax .. "), " .. tostring(ent) .. " will only have " .. physmax .. " instead of " .. physcount .. ".")
 	end
@@ -253,7 +251,8 @@ end
 
 -- Clips from https://steamcommunity.com/sharedfiles/filedetails/?id=106753151
 duplicator.RegisterEntityModifier("clips", function(ply, ent, data)
-	if not ent or not ent:IsValid() then return end
+	if not IsValid(ent) then return end
+	if ent.EntityMods.proper_clipping then return end
 	
 	if not hook.Run("CanTool", ply, {Entity = ent}, "proper_clipping") then
 		ply:ChatPrint("Not allowed to create visual clips, " .. tostring(ent) .. " will be spawned without any.")
@@ -278,7 +277,7 @@ end)
 local insides = {}
 
 duplicator.RegisterEntityModifier("clipping_all_prop_clips", function(ply, ent, data)
-	if not ent or not ent:IsValid() then return end
+	if not IsValid(ent) then return end
 	
 	if not hook.Run("CanTool", ply, {Entity = ent}, "proper_clipping") then
 		ply:ChatPrint("Not allowed to create visual clips, " .. tostring(ent) .. " will be spawned without any.")
@@ -301,8 +300,8 @@ duplicator.RegisterEntityModifier("clipping_all_prop_clips", function(ply, ent, 
 	end)
 end)
 
-duplicator.RegisterEntityModifier("clipping_render_inside", function(ply, ent, data)
-	if not ent or not ent:IsValid() then return end
+duplicator.RegisterEntityModifier("clipping_render_inside", function(_, ent, data)
+	if not IsValid(ent) then return end
 	
 	local inside = data[1]
 	insides[ent] = inside
