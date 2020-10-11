@@ -116,7 +116,6 @@ net.Receive("proper_clipping", function()
 		clip_queue[id] = nil
 		
 		local ent = Entity(id)
-
 		if not IsValid(ent) then return end
 		
 		ProperClipping.RemoveVisualClips(ent)

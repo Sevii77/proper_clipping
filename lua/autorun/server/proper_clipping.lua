@@ -108,7 +108,7 @@ function ProperClipping.StoreClips(ent)
 	for i, clip in ipairs(ent.ClipData) do
 		clips[i] = {
 			n = clip.n,
-			d = clip.norm:Dot(clip.norm * clip.d - ent:OBBCenter()),
+			d = clip.norm:Dot(clip.norm * clip.d - (ent.OBBCenterOrg or ent:OBBCenter())),
 			inside = clip.inside,
 			new = true
 		}
@@ -195,64 +195,86 @@ end)
 
 ----------------------------------------
 
+-- Used to convert from OBBCenter translated to world > GetPos cuz obbcenter fucks up visclip with physclip
+local function convert(ent, norm, dist)
+	return norm, norm:Dot(norm * dist + (ent.OBBCenterOrg or ent:OBBCenter()))
+end
+
+-- Used to check if clips is different from proper_clipping and if so only use the later one
+local function modified(ent)
+	local a, b = ent.EntityMods.proper_clipping, ent.EntityMods.clips
+	if #a ~= #b then return true end
+	
+	for i = 1, #a do
+		local anorm, adist = a[i][1], a[i][2]
+		local bnorm, bdist = convert(ent, b[i].n:Forward(), b[i].d)
+		
+		if not anorm:IsEqualTol(bnorm, 4) or math.Round(adist, 2) ~= math.Round(bdist, 2) then return true end
+	end
+	
+	return false
+end
+
 -- Clips from self
 duplicator.RegisterEntityModifier("proper_clipping", function(ply, ent, data)
 	if not IsValid(ent) then return end
 	
+	-- Entity was last clipped with this tool so only handle it with that entmod
+	if ent.EntityMods.clipping_all_prop_clips then return end
+	if modified(ent) then return end
+	
 	if not hook.Run("CanTool", ply, {Entity = ent}, "proper_clipping") then
 		ply:ChatPrint("Not allowed to create visual clips, " .. tostring(ent) .. " will be spawned without any.")
 		
 		return
 	end
 	
-	local physcount = 0
-	local physmax = ProperClipping.MaxPhysicsClips()
-	
-	for _, clip in ipairs(data) do
-		if clip.physics then
-			if not hook.Run("CanTool", ply, {Entity = ent}, "proper_clipping_physics") then
-				ply:ChatPrint("Not allowed to create physics clips, " .. tostring(ent) .. " will be spawned without any.")
+	timer.Simple(0, function()
+		local physcount = 0
+		local physmax = ProperClipping.MaxPhysicsClips()
+		
+		for _, clip in ipairs(data) do
+			if clip.physics then
+				if not hook.Run("CanTool", ply, {Entity = ent}, "proper_clipping_physics") then
+					ply:ChatPrint("Not allowed to create physics clips, " .. tostring(ent) .. " will be spawned without any.")
+					
+					physcount = math.huge
+				end
 				
-				physcount = math.huge
+				break
+			end
+		end
+		
+		for _, clip in ipairs(data) do
+			local norm, dist, inside, physics = unpack(clip)
+			local exists, index = ProperClipping.ClipExists(ent, norm, dist)
+			
+			if physics then
+				physcount = physcount + 1
+				
+				if physcount > physmax then
+					physics = false
+				elseif index then
+					ProperClipping.RemoveClip(ent, index)
+				end
 			end
 			
-			break
-		end
-	end
-
-	for _, clip in ipairs(data) do
-		local norm, dist, inside, physics = unpack(clip)
-		local exists, index = ProperClipping.ClipExists(ent, norm, dist)
-
-		if physics then
-			physcount = physcount + 1
-
-			if physcount > physmax then
-				physics = false
-			elseif index then
-				ProperClipping.RemoveClip(ent, index)
+			if not exists or physics then
+				ProperClipping.AddClip(ent, norm, dist, inside, physics)
 			end
 		end
-
-		if not exists or physics then
-			ProperClipping.AddClip(ent, norm, dist, inside, physics)
+		
+		if physcount > physmax and physcount ~= math.huge then
+			ply:ChatPrint("Max physics clips per entity reached (max " .. physmax .. "), " .. tostring(ent) .. " will only have " .. physmax .. " instead of " .. physcount .. ".")
 		end
-	end
-
-	if physcount > physmax and physcount ~= math.huge then
-		ply:ChatPrint("Max physics clips per entity reached (max " .. physmax .. "), " .. tostring(ent) .. " will only have " .. physmax .. " instead of " .. physcount .. ".")
-	end
+	end)
 end)
-
--- Function to convert from OBBCenter translated to world > GetPos cuz obbcenter fucks up visclip with physclip
-local function convert(ent, norm, dist)
-	return norm, norm:Dot(norm * dist + ent:OBBCenter())
-end
 
 -- Clips from https://steamcommunity.com/sharedfiles/filedetails/?id=106753151
 duplicator.RegisterEntityModifier("clips", function(ply, ent, data)
 	if not IsValid(ent) then return end
-	if ent.EntityMods.proper_clipping then return end
+	if ent.EntityMods.clipping_all_prop_clips then return end
+	if ent.EntityMods.proper_clipping and not modified(ent) then return end
 	
 	if not hook.Run("CanTool", ply, {Entity = ent}, "proper_clipping") then
 		ply:ChatPrint("Not allowed to create visual clips, " .. tostring(ent) .. " will be spawned without any.")
@@ -260,9 +282,7 @@ duplicator.RegisterEntityModifier("clips", function(ply, ent, data)
 		return
 	end
 	
-	duplicator.ClearEntityModifier(ent, "clips")
-	
-	timer.Simple(0.5, function()
+	timer.Simple(0, function()
 		for _, clip in ipairs(data) do
 			local norm, dist = convert(ent, clip.n:Forward(), clip.d)
 			
@@ -274,8 +294,6 @@ duplicator.RegisterEntityModifier("clips", function(ply, ent, data)
 end)
 
 -- Clips from https://steamcommunity.com/sharedfiles/filedetails/?id=238138995
-local insides = {}
-
 duplicator.RegisterEntityModifier("clipping_all_prop_clips", function(ply, ent, data)
 	if not IsValid(ent) then return end
 	
@@ -285,45 +303,19 @@ duplicator.RegisterEntityModifier("clipping_all_prop_clips", function(ply, ent, 
 		return
 	end
 	
-	duplicator.ClearEntityModifier(ent, "clipping_all_prop_clips")
+	local inside = ent.EntityMods.clipping_render_inside
+	inside = inside and inside[1]
 	
-	timer.Simple(0.5, function()
+	duplicator.ClearEntityModifier(ent, "clipping_all_prop_clips")
+	duplicator.ClearEntityModifier(ent, "clipping_render_inside")
+	
+	timer.Simple(0, function()
 		for _, clip in ipairs(data) do
 			local norm, dist = convert(ent, clip[1]:Forward(), clip[2])
 			
 			if not ProperClipping.ClipExists(ent, norm, dist) then
-				ProperClipping.AddClip(ent, norm, dist, insides[ent])
+				ProperClipping.AddClip(ent, norm, dist, inside)
 			end
 		end
-		
-		insides[ent] = nil
-	end)
-end)
-
-duplicator.RegisterEntityModifier("clipping_render_inside", function(_, ent, data)
-	if not IsValid(ent) then return end
-	
-	local inside = data[1]
-	insides[ent] = inside
-	
-	if ent.ClipData then
-		local changed = false
-		for _, clip in ipairs(ent.ClipData) do
-			if clip.inside ~= inside then
-				clip.inside = inside
-				changed = true
-			end
-		end
-		
-		if changed then
-			ProperClipping.StoreClips(ent)
-			ProperClipping.NetworkClips(ent)
-		end
-	end
-	
-	duplicator.ClearEntityModifier(ent, "clipping_render_inside")
-	
-	timer.Simple(1, function()
-		insides[ent] = nil
 	end)
 end)

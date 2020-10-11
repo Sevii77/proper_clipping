@@ -180,6 +180,7 @@ function ProperClipping.ClipPhysics(ent, norm, dist)
 	if not meshes then return end
 	
 	ent.PhysicsClipped = true
+	ent.OBBCenterOrg = ent.OBBCenterOrg or ent:OBBCenter()
 	
 	-- Store properties to copy over to the new physobj
 	local data = ProperClipping.GetPhysObjData(physobj)
@@ -224,6 +225,7 @@ function ProperClipping.ResetPhysics(ent)
 	if not ent.PhysicsClipped then return end
 	
 	ent.PhysicsClipped = nil
+	ent.OBBCenterOrg = nil
 	
 	local physobj = ent:GetPhysicsObject()
 	local data = IsValid(physobj) and ProperClipping.GetPhysObjData(physobj)
