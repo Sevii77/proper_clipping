@@ -7,7 +7,6 @@ local cvar_clips = CreateConVar("proper_clipping_max_visual", "6", FCVAR_ARCHIVE
 local function renderOverride(self)
 	if not self or not self:IsValid() then return end
 	if not self.Clipped or not self.ClipData then return end
-	if #self.ClipData == 0 then return end
 	
 	local prev = render.EnableClipping(true)
 	local max = cvar_clips:GetInt()
@@ -68,7 +67,7 @@ function ProperClipping.AddVisualClip(ent, norm, dist, inside, physics)
 end
 
 function ProperClipping.RemoveVisualClips(ent)
-	if ent.RenderOverride_preclipping == true then return end
+	if not ent.Clipped then return end
 	
 	ent.Clipped = nil
 	ent.ClipData = nil
@@ -117,7 +116,7 @@ net.Receive("proper_clipping", function()
 		clip_queue[id] = nil
 		
 		local ent = Entity(id)
-		if IsValid(ent) then return end
+		if not IsValid(ent) then return end
 		
 		ProperClipping.RemoveVisualClips(ent)
 		ProperClipping.ResetPhysics(ent)
