@@ -80,7 +80,11 @@ local function clipPlane3D(poly, plane, plane_dir)
 		if a and b then
 			table.insert(n, cur)
 		elseif a or b then
-			table.insert(n, intersection3D(last, cur, plane, plane_dir))
+			local point = intersection3D(last, cur, plane, plane_dir)
+			-- Check since if the point lies on the plane it will return nil
+			if point then
+				table.insert(n, point)
+			end
 			
 			if b then
 				table.insert(n, cur)
