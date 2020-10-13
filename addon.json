@@ -1,0 +1,13 @@
+{
+	"title"		: "Proper Clipping",
+	"type"		: "tool",
+	"tags"		: ["realism", "build"],
+	"ignore"	: [
+		"addon.jpg",
+		"README.md",
+		".gitignore",
+		".git/*",
+		"release/*",
+		"imgs/*"
+	]
+}

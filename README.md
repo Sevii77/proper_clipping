@@ -37,4 +37,4 @@ Client Convars:
 
 ---
 
-Comming to a Steam Workshop near you Soon™
+[Available on the Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=2256491552)
