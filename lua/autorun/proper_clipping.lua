@@ -190,19 +190,34 @@ function ProperClipping.ClipPhysics(ent, norm, dist)
 	local data = ProperClipping.GetPhysObjData(physobj)
 	
 	-- Cull stuff
-	local pos = norm * dist
+	if type(dist) ~= "table" then
+		norm = {norm}
+		dist = {dist}
+	end
 	
 	local new = {}
 	for _, convex in ipairs(meshes) do
 		local vertices = {}
 		for _, vertex in ipairs(convex) do
-			table.insert(vertices, vertex.pos)
+			vertices[#vertices + 1] = vertex.pos
 		end
 		
-		vertices = clipPlane3D(vertices, pos, norm)
-		if next(vertices) then
-			table.insert(new, vertices)
+		new[#new + 1] = vertices
+	end
+	
+	for i = 1, #norm do
+		local norm = norm[i]
+		local pos = norm * dist[i]
+		
+		local new2 = {}
+		for _, vertices in ipairs(new) do
+			vertices = clipPlane3D(vertices, pos, norm)
+			if next(vertices) then
+				new2[#new2 + 1] = vertices
+			end
 		end
+		
+		new = new2
 	end
 	
 	-- Make new one

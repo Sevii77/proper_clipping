@@ -24,18 +24,40 @@ function ProperClipping.AddClip(ent, norm, dist, inside, physics)
 	
 	if #ent.ClipData >= cvar_visuals:GetInt() then return false end
 	
-	table.insert(ent.ClipData, {
-		norm = norm,
-		n = norm:Angle(),
-		dist = dist,
-		d = norm:Dot(norm * dist - (ent.OBBCenterOrg or ent:OBBCenter())),
-		inside = inside,
-		physics = physics, -- this is used to network and call on client automaticly
-		new = true -- whats this used for? no clue but lets add it anyways
-	})
+	if type(dist) ~= "table" then
+		norm = {norm}
+		dist = {dist}
+		inside = {inside}
+		physics = {physics}
+	end
 	
-	if physics then
-		ProperClipping.ClipPhysics(ent, norm, dist)
+	local norms, dists = {}, {}
+	local physcount = 1
+	for i = 1, #norm do
+		local norm = norm[i]
+		local dist = dist[i]
+		local inside = inside[i]
+		local physics = physics[i]
+		
+		table.insert(ent.ClipData, {
+			norm = norm,
+			n = norm:Angle(),
+			dist = dist,
+			d = norm:Dot(norm * dist - (ent.OBBCenterOrg or ent:OBBCenter())),
+			inside = inside,
+			physics = physics, -- this is used to network and call on client automaticly
+			new = true -- whats this used for? no clue but lets add it anyways
+		})
+		
+		if physics then
+			norms[i] = norm
+			dists[i] = dist
+			physcount = physcount + 1
+		end
+	end
+	
+	if physcount ~= 1 then
+		ProperClipping.ClipPhysics(ent, norms, dists)
 	end
 	
 	ProperClipping.StoreClips(ent)
@@ -246,24 +268,25 @@ duplicator.RegisterEntityModifier("proper_clipping", function(ply, ent, data)
 			end
 		end
 		
-		for _, clip in ipairs(data) do
+		local norms, dists, insides, physicss = {}, {}, {}, {}
+		for i, clip in ipairs(data) do
 			local norm, dist, inside, physics = unpack(clip)
-			local exists, index = ProperClipping.ClipExists(ent, norm, dist)
 			
 			if physics then
 				physcount = physcount + 1
 				
 				if physcount > physmax then
 					physics = false
-				elseif index then
-					ProperClipping.RemoveClip(ent, index)
 				end
 			end
 			
-			if not exists or physics then
-				ProperClipping.AddClip(ent, norm, dist, inside, physics)
-			end
+			norms[i] = norm
+			dists[i] = dist
+			insides[i] = inside
+			physicss[i] = physics
 		end
+		
+		ProperClipping.AddClip(ent, norms, dists, insides, physicss)
 		
 		if physcount > physmax and physcount ~= math.huge then
 			ply:ChatPrint("Max physics clips per entity reached (max " .. physmax .. "), " .. tostring(ent) .. " will only have " .. physmax .. " instead of " .. physcount .. ".")

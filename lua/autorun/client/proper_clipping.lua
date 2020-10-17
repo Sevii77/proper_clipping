@@ -88,14 +88,22 @@ local function attemptClip(id, clips)
 	ProperClipping.RemoveVisualClips(ent)
 	ProperClipping.ResetPhysics(ent)
 	
+	local norms, dists = {}, {}
+	local physcount = 1
 	for _, clip in ipairs(clips) do
 		local norm, dist, inside, physics = unpack(clip)
 		
 		ProperClipping.AddVisualClip(ent, norm, dist, inside, physics)
 		
 		if physics then
-			ProperClipping.ClipPhysics(ent, norm, dist)
+			norms[physcount] = norm
+			dists[physcount] = dist
+			physcount = physcount + 1
 		end
+	end
+	
+	if physcount ~= 1 then
+		ProperClipping.ClipPhysics(ent, norms, dists)
 	end
 	
 	return true
