@@ -107,8 +107,18 @@ function ProperClipping.RemoveClip(ent, index)
 	if clip.physics then
 		ProperClipping.ResetPhysics(ent)
 		
+		local norms, dists = {}, {}
+		local physcount = 1
 		for _, clip in ipairs(ent.ClipData) do
-			ProperClipping.ClipPhysics(ent, clip.norm, clip.dist)
+			if clip.physics then
+				norms[physcount] = clip.norm
+				dists[physcount] = clip.dist
+				physcount = physcount + 1
+			end
+		end
+		
+		if physcount ~= 1 then
+			ProperClipping.ClipPhysics(ent, norms, dists)
 		end
 	end
 	
