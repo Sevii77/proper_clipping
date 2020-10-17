@@ -17,7 +17,8 @@ ProperClipping = ProperClipping or {
 }
 
 local cvar_physics = CreateConVar("proper_clipping_max_physics", "2", FCVAR_ARCHIVE, "Max physical clips a entity can have", 0, 8)
-
+local dConstraints = duplicator.ConstraintType
+local clippedPhysics = ProperClipping.ClippedPhysics
 local class_whitelist = {
 	prop_physics = true
 }
@@ -27,20 +28,23 @@ local class_whitelist = {
 if CLIENT then
 	
 	hook.Add("Think", "proper_clipping_physics", function()
-		for ent in pairs(ProperClipping.ClippedPhysics) do
-			local physobj = ent:GetPhysicsObject()
-			
-			if not IsValid(physobj) then
-				ProperClipping.ClippedPhysics[ent] = nil
+		for ent in pairs(clippedPhysics) do
+			if not IsValid(ent) then
+				clippedPhysics[ent] = nil
 			else
-				physobj:SetPos(ent:GetPos())
-				physobj:SetAngles(ent:GetAngles())
+				local physobj = ent:GetPhysicsObject()
+				if not IsValid(physobj) then
+					clippedPhysics[ent] = nil
+				else
+					physobj:SetPos(ent:GetPos())
+					physobj:SetAngles(ent:GetAngles())
+				end
 			end
 		end
 	end)
 	
 	hook.Add("PhysgunPickup", "proper_clipping_physics", function(_, ent)
-		if ProperClipping.ClippedPhysics[ent] then return false end
+		if clippedPhysics[ent] then return false end
 	end)
 	
 	hook.Add("NetworkEntityCreated", "proper_clipping_physics", function(ent)
@@ -125,41 +129,38 @@ function ProperClipping.CanAddPhysicsClip(ent, ply)
 	return ProperClipping.PhysicsClipsLeft(ent)
 end
 
-function ProperClipping.GetPhysObjData(physobj)
-	local constraints, constraint_ents = {}, {}
-	
-	if SERVER then
-		duplicator.GetAllConstrainedEntitiesAndConstraints(physobj:GetEntity(), constraint_ents, constraints)
-	end
-	
+function ProperClipping.GetPhysObjData(ent, physobj)
 	return {
 		vol = physobj:GetVolume(),
 		mass = physobj:GetMass(),
 		mat = physobj:GetMaterial(),
 		contents = physobj:GetContents(),
 		motion = physobj:IsMotionEnabled(),
-		
-		constraints = constraints,
-		constraint_ents = constraint_ents
+		constraints = SERVER and constraint.GetTable(ent) or nil
 	}
 end
 
-function ProperClipping.ApplyPhysObjData(physobj, data)
-	physobj:SetMass(math.max(1, physobj:GetVolume() / data.vol * data.mass))
-	physobj:SetMaterial(data.mat)
-	physobj:SetContents(data.contents)
+function ProperClipping.ApplyPhysObjData(physobj, physdata)
+	physobj:SetMass(math.max(1, physobj:GetVolume() / physdata.vol * physdata.mass))
+	physobj:SetMaterial(physdata.mat)
+	physobj:SetContents(physdata.contents)
 	
 	if SERVER then
-		physobj:EnableMotion(data.motion)
-		if data.motion then
+		physobj:EnableMotion(physdata.motion)
+		if physdata.motion then
 			physobj:Wake()
 		end
 		
-		timer.Simple(0, function()
-			for id, constraint in pairs(data.constraints) do
-				duplicator.CreateConstraintFromTable(constraint, data.constraint_ents)
+		for _, data in ipairs(physdata.constraints) do
+			local constraint = dConstraints[data.Type]
+			local args = {}
+			
+			for i, arg in ipairs(Constraint.Args) do
+				args[i] = data[arg]
 			end
-		end)
+			
+			constraint.Func(unpack(args)) -- Forcing constraints to create themselves again
+		end
 	else
 		physobj:EnableMotion(false)
 		physobj:Sleep()
@@ -187,7 +188,7 @@ function ProperClipping.ClipPhysics(ent, norm, dist)
 	ent.OBBCenterOrg = ent.OBBCenterOrg or ent:OBBCenter()
 	
 	-- Store properties to copy over to the new physobj
-	local data = ProperClipping.GetPhysObjData(physobj)
+	local data = ProperClipping.GetPhysObjData(ent, physobj)
 	
 	-- Cull stuff
 	if type(dist) ~= "table" then
@@ -232,10 +233,10 @@ function ProperClipping.ClipPhysics(ent, norm, dist)
 	ProperClipping.ApplyPhysObjData(physobj, data)
 	
 	if CLIENT then
-		ProperClipping.ClippedPhysics[ent] = physobj
+		clippedPhysics[ent] = physobj
 		
 		ent:CallOnRemove("proper_clipping", function()
-			ProperClipping.ClippedPhysics[ent] = nil
+			clippedPhysics[ent] = nil
 		end)
 	end
 	
@@ -249,7 +250,7 @@ function ProperClipping.ResetPhysics(ent)
 	ent.OBBCenterOrg = nil
 	
 	local physobj = ent:GetPhysicsObject()
-	local data = IsValid(physobj) and ProperClipping.GetPhysObjData(physobj)
+	local data = IsValid(physobj) and ProperClipping.GetPhysObjData(ent, physobj)
 	
 	-- Amazing hack that fixes the physics object, why does this work?
 	ent:SetModel(ent:GetModel())
@@ -265,7 +266,7 @@ function ProperClipping.ResetPhysics(ent)
 	end
 	
 	if CLIENT then
-		ProperClipping.ClippedPhysics[ent] = physobj
+		clippedPhysics[ent] = physobj
 	end
 	
 	hook.Run("ProperClippingPhysicsReset", ent)
