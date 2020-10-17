@@ -27,7 +27,8 @@ function ProperClipping.AddClip(ent, norm, dist, inside, physics)
 	table.insert(ent.ClipData, {
 		norm = norm,
 		n = norm:Angle(),
-		d = dist,
+		dist = dist,
+		d = norm:Dot(norm * dist - (ent.OBBCenterOrg or ent:OBBCenter())),
 		inside = inside,
 		physics = physics, -- this is used to network and call on client automaticly
 		new = true -- whats this used for? no clue but lets add it anyways
@@ -79,7 +80,7 @@ function ProperClipping.RemoveClip(ent, index)
 		ProperClipping.ResetPhysics(ent)
 		
 		for _, clip in ipairs(ent.ClipData) do
-			ProperClipping.ClipPhysics(ent, clip.norm, clip.d)
+			ProperClipping.ClipPhysics(ent, clip.norm, clip.dist)
 		end
 	end
 	
@@ -95,7 +96,7 @@ function ProperClipping.StoreClips(ent)
 	for i, clip in ipairs(ent.ClipData) do
 		clips[i] = {
 			clip.norm,
-			clip.d,
+			clip.dist,
 			clip.inside,
 			clip.physics
 		}
@@ -108,7 +109,7 @@ function ProperClipping.StoreClips(ent)
 	for i, clip in ipairs(ent.ClipData) do
 		clips[i] = {
 			n = clip.n,
-			d = clip.norm:Dot(clip.norm * clip.d - (ent.OBBCenterOrg or ent:OBBCenter())),
+			d = clip.d,
 			inside = clip.inside,
 			new = true
 		}
@@ -132,11 +133,11 @@ function ProperClipping.NetworkClips(ent, ply)
 		else
 			net.WriteBool(true)
 			net.WriteUInt(#ent.ClipData, 4)
-			for i, clip in ipairs(ent.ClipData) do
+			for _, clip in ipairs(ent.ClipData) do
 				net.WriteFloat(clip.norm.x)
 				net.WriteFloat(clip.norm.y)
 				net.WriteFloat(clip.norm.z)
-				net.WriteFloat(clip.d)
+				net.WriteFloat(clip.dist)
 				net.WriteBool(clip.inside)
 				net.WriteBool(clip.physics)
 			end
@@ -158,7 +159,7 @@ function ProperClipping.ClipExists(ent, norm, dist)
 		if math.Round(clip.norm.x, 4) ~= x then continue end
 		if math.Round(clip.norm.y, 4) ~= y then continue end
 		if math.Round(clip.norm.z, 4) ~= z then continue end
-		if math.Round(clip.d, 2) ~= d then continue end
+		if math.Round(clip.dist, 2) ~= d then continue end
 		
 		return true, i
 	end

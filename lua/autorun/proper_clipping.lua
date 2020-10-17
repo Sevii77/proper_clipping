@@ -47,7 +47,7 @@ if CLIENT then
 		if ent.PhysicsClipped then
 			for _, clip in ipairs(ent.ClipData) do
 				if clip.physics then
-					ProperClipping.ClipPhysics(ent, clip.norm, clip.d)
+					ProperClipping.ClipPhysics(ent, clip.norm, clip.dist)
 				end
 			end
 		end

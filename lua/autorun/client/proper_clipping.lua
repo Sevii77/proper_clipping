@@ -27,7 +27,7 @@ local function renderOverride(self)
 			local norm = Vector(clip.norm)
 			norm:Rotate(ang)
 			
-			render.PushCustomClipPlane(norm, norm:Dot(pos + norm * clip.d))
+			render.PushCustomClipPlane(norm, norm:Dot(pos + norm * clip.dist))
 		end
 	end
 	
@@ -59,7 +59,8 @@ function ProperClipping.AddVisualClip(ent, norm, dist, inside, physics)
 		origin = norm * dist,
 		norm = norm,
 		n = norm:Angle(),
-		d = dist,
+		dist = dist,
+		d = norm:Dot(norm * dist - (ent.OBBCenterOrg or ent:OBBCenter())),
 		inside = inside,
 		physics = physics,
 		new = true -- still no clue what this is for, meh w/e
