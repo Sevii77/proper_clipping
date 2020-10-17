@@ -49,6 +49,8 @@ function ProperClipping.AddClip(ent, norm, dist, inside, physics)
 			new = true -- whats this used for? no clue but lets add it anyways
 		})
 		
+		hook.Run("ProperClippingClipAdded", ent, norm, dist, inside, physics)
+		
 		if physics then
 			norms[i] = norm
 			dists[i] = dist
@@ -81,6 +83,8 @@ function ProperClipping.RemoveClips(ent)
 	ProperClipping.ResetPhysics(ent)
 	ProperClipping.NetworkClips(ent)
 	
+	hook.Run("ProperClippingClipsRemoved", ent)
+	
 	return true
 end
 
@@ -95,6 +99,8 @@ function ProperClipping.RemoveClip(ent, index)
 	if not next(ent.ClipData) then
 		ProperClipping.RemoveClips(ent)
 		
+		hook.Run("ProperClippingClipRemoved", ent, index)
+		
 		return true
 	end
 	
@@ -108,6 +114,8 @@ function ProperClipping.RemoveClip(ent, index)
 	
 	ProperClipping.StoreClips(ent)
 	ProperClipping.NetworkClips(ent)
+	
+	hook.Run("ProperClippingClipRemoved", ent, index)
 	
 	return true
 end
@@ -166,6 +174,8 @@ function ProperClipping.NetworkClips(ent, ply)
 		end
 		
 		net.Send(ply or player.GetHumans())
+		
+		hook.Run("ProperClippingClipsNetworked", ent, ply)
 	end)
 end
 

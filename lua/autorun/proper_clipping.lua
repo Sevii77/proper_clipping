@@ -168,7 +168,7 @@ end
 
 function ProperClipping.ClipPhysics(ent, norm, dist)
 	if not class_whitelist[ent:GetClass()] and not ent:IsScripted() then return end
-	if hook.Run("ProperClippingCanPhysicsClip", ent, ply) == false then return end
+	if hook.Run("ProperClippingCanPhysicsClip", ent) == false then return end
 	
 	local physobj = ent:GetPhysicsObject()
 	
@@ -238,6 +238,8 @@ function ProperClipping.ClipPhysics(ent, norm, dist)
 			ProperClipping.ClippedPhysics[ent] = nil
 		end)
 	end
+	
+	hook.Run("ProperClippingPhysicsClipped", ent, norm, dist)
 end
 
 function ProperClipping.ResetPhysics(ent)
@@ -265,4 +267,6 @@ function ProperClipping.ResetPhysics(ent)
 	if CLIENT then
 		ProperClipping.ClippedPhysics[ent] = physobj
 	end
+	
+	hook.Run("ProperClippingPhysicsReset", ent)
 end

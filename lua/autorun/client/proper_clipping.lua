@@ -65,6 +65,8 @@ function ProperClipping.AddVisualClip(ent, norm, dist, inside, physics)
 		physics = physics,
 		new = true -- still no clue what this is for, meh w/e
 	})
+	
+	hook.Run("ProperClippingClipAdded", ent, norm, dist, inside, physics)
 end
 
 function ProperClipping.RemoveVisualClips(ent)
@@ -75,6 +77,8 @@ function ProperClipping.RemoveVisualClips(ent)
 	
 	ent.RenderOverride = ent.RenderOverride_preclipping
 	ent.RenderOverride_preclipping = nil
+	
+	hook.Run("ProperClippingClipsRemoved", ent)
 end
 
 ----------------------------------------
@@ -105,6 +109,8 @@ local function attemptClip(id, clips)
 	if physcount ~= 1 then
 		ProperClipping.ClipPhysics(ent, norms, dists)
 	end
+	
+	hook.Run("ProperClippingClipAdded", ent, index)
 	
 	return true
 end
