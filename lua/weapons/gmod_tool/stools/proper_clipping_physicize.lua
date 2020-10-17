@@ -54,7 +54,9 @@ function TOOL:LeftClick(tr)
 		ProperClipping.AddClip(ent, norms, dists, insides, physicss)
 	end
 	
-	owner:ChatPrint("Converted " .. (i - 1) .. " clips")
+	if left >= 0 then
+		owner:ChatPrint("Converted " .. (i - 1) .. " clips")
+	end
 	
 	return true
 end
