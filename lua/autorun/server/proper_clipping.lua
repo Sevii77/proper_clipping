@@ -23,14 +23,12 @@ function ProperClipping.AddClip(ent, norm, dist, inside, physics)
 	ent.ClipData = ent.ClipData or {}
 	
 	if #ent.ClipData >= cvar_visuals:GetInt() then return false end
-
-	local Center = ent.OBBCenterOrg or ent:OBBCenter()
-
+	
 	table.insert(ent.ClipData, {
 		norm = norm,
 		n = norm:Angle(),
 		dist = dist,
-		d = norm:Dot(norm * dist - Center),
+		d = norm:Dot(norm * dist - (ent.OBBCenterOrg or ent:OBBCenter())),
 		inside = inside,
 		physics = physics, -- this is used to network and call on client automaticly
 		new = true -- whats this used for? no clue but lets add it anyways

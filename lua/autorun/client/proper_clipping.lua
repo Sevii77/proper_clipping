@@ -54,15 +54,13 @@ function ProperClipping.AddVisualClip(ent, norm, dist, inside, physics)
 		ent.Clipped = true
 		ent.ClipData = {}
 	end
-
-	local Center = ent.OBBCenterOrg or ent:OBBCenter()
-
+	
 	table.insert(ent.ClipData, {
 		origin = norm * dist,
 		norm = norm,
 		n = norm:Angle(),
 		dist = dist,
-		d = norm:Dot(norm * dist - Center),
+		d = norm:Dot(norm * dist - (ent.OBBCenterOrg or ent:OBBCenter())),
 		inside = inside,
 		physics = physics,
 		new = true -- still no clue what this is for, meh w/e
