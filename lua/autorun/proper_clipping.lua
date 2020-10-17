@@ -155,7 +155,7 @@ function ProperClipping.ApplyPhysObjData(physobj, physdata)
 			local constraint = dConstraints[data.Type]
 			local args = {}
 			
-			for i, arg in ipairs(Constraint.Args) do
+			for i, arg in ipairs(constraint.Args) do
 				args[i] = data[arg]
 			end
 			
