@@ -151,16 +151,18 @@ function ProperClipping.ApplyPhysObjData(physobj, physdata)
 			physobj:Wake()
 		end
 		
-		for _, data in ipairs(physdata.constraints) do
-			local constraint = dConstraints[data.Type]
-			local args = {}
-			
-			for i, arg in ipairs(constraint.Args) do
-				args[i] = data[arg]
+		timer.Simple(0, function()
+			for _, data in ipairs(physdata.constraints) do
+				local constraint = dConstraints[data.Type]
+				local args = {}
+				
+				for i, arg in ipairs(constraint.Args) do
+					args[i] = data[arg]
+				end
+				
+				constraint.Func(unpack(args)) -- Forcing constraints to create themselves again
 			end
-			
-			constraint.Func(unpack(args)) -- Forcing constraints to create themselves again
-		end
+		end)
 	else
 		physobj:EnableMotion(false)
 		physobj:Sleep()
