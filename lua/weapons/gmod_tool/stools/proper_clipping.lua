@@ -4,6 +4,7 @@ TOOL.Name = "#Tool.proper_clipping.name"
 TOOL.ClientConVar.mode    = "0" -- int
 TOOL.ClientConVar.offset  = "0" -- float
 TOOL.ClientConVar.physics = "0" -- bool
+TOOL.ClientConVar.keepmass = "0" -- bool
 
 if CLIENT then
 	language.Add("Tool.proper_clipping.name", "Proper Clipping")
@@ -63,6 +64,11 @@ if CLIENT then
 		panel:AddControl("Checkbox", {
 			label = "Physics",
 			command = "proper_clipping_physics"
+		})
+		
+		panel:AddControl("Checkbox", {
+			label = "Keep Mass",
+			command = "proper_clipping_keepmass"
 		})
 	end
 	
@@ -171,6 +177,7 @@ function TOOL:RightClick(tr)
 	local norm = ent:WorldToLocalAngles(norm:Angle()):Forward() * -1
 	
 	local physics = self:GetClientNumber("physics") ~= 0
+	local keepmass = self:GetClientNumber("keepmass") ~= 0
 	
 	if physics then
 		local valid, left = ProperClipping.CanAddPhysicsClip(ent, owner)
@@ -186,17 +193,17 @@ function TOOL:RightClick(tr)
 		end
 	end
 	
-	ProperClipping.AddClip(ent, norm, dist, owner:KeyDown(IN_SPEED), physics)
+	ProperClipping.AddClip(ent, norm, dist, owner:KeyDown(IN_SPEED), physics, keepmass)
 	
 	undo.Create("Proper Clip")
-	undo.AddFunction(function(_, ent, norm, dist)
+	undo.AddFunction(function(_, ent, norm, dist, keepmass)
 		if not ent or not ent:IsValid() then return end
 		
 		local exists, index = ProperClipping.ClipExists(ent, norm, dist)
 		if exists then
-			ProperClipping.RemoveClip(ent, index)
+			ProperClipping.RemoveClip(ent, index, keepmass)
 		end
-	end, ent, norm, dist)
+	end, ent, norm, dist, keepmass)
 	undo.SetPlayer(owner)
 	undo.Finish()
 	
@@ -210,7 +217,7 @@ function TOOL:Reload(tr)
 	if ent:IsPlayer() or ent:IsWorld() then return end
 	if CLIENT then return true end
 	
-	ProperClipping.RemoveClips(ent)
+	ProperClipping.RemoveClips(ent, self:GetClientNumber("keepmass") ~= 0)
 	
 	return true
 end
@@ -248,8 +255,7 @@ if CLIENT then
 		if not tool then return end
 		
 		local origin = tool.origin
-		local norm = tool.norm
-		if not norm then return end
+		if not origin then return end
 		
 		local tr = ply:GetEyeTrace()
 		local ent = tr.Entity
@@ -273,6 +279,9 @@ if CLIENT then
 			render.DrawQuadEasy(origin, -norm, 16, 16, color_green2)
 			render.DrawLine(origin, origin + norm * 16, color_red)
 		else
+			local norm = tool.norm
+			if not norm then return end
+			
 			-- Preview
 			if ent and ent:IsValid() and not ent:IsPlayer() then
 				if ent ~= last_ent then

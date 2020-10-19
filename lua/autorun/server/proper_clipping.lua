@@ -11,7 +11,7 @@ function ProperClipping.CanAddClip(ent, ply)
 	return hook.Run("CanTool", ply, {Entity = ent}, "proper_clipping") and true or false
 end
 
-function ProperClipping.AddClip(ent, norm, dist, inside, physics)
+function ProperClipping.AddClip(ent, norm, dist, inside, physics, keepmass)
 	if not ProperClipping.ClippedEntities[ent] then
 		ProperClipping.ClippedEntities[ent] = ent
 		ent:CallOnRemove("proper_clipping", function()
@@ -59,7 +59,7 @@ function ProperClipping.AddClip(ent, norm, dist, inside, physics)
 	end
 	
 	if physcount ~= 1 then
-		ProperClipping.ClipPhysics(ent, norms, dists)
+		ProperClipping.ClipPhysics(ent, norms, dists, keepmass)
 	end
 	
 	ProperClipping.StoreClips(ent)
@@ -68,7 +68,7 @@ function ProperClipping.AddClip(ent, norm, dist, inside, physics)
 	return true
 end
 
-function ProperClipping.RemoveClips(ent)
+function ProperClipping.RemoveClips(ent, keepmass)
 	if not ent.ClipData then return false end
 	
 	ProperClipping.ClippedEntities[ent] = nil
@@ -80,7 +80,7 @@ function ProperClipping.RemoveClips(ent)
 	duplicator.ClearEntityModifier(ent, "proper_clipping")
 	duplicator.ClearEntityModifier(ent, "clips")
 	
-	ProperClipping.ResetPhysics(ent)
+	ProperClipping.ResetPhysics(ent, keepmass)
 	ProperClipping.NetworkClips(ent)
 	
 	hook.Run("ProperClippingClipsRemoved", ent)
@@ -88,7 +88,7 @@ function ProperClipping.RemoveClips(ent)
 	return true
 end
 
-function ProperClipping.RemoveClip(ent, index)
+function ProperClipping.RemoveClip(ent, index, keepmass)
 	if not ent.ClipData then return false end
 	if not ent.ClipData[index] then return false end
 	
@@ -97,7 +97,7 @@ function ProperClipping.RemoveClip(ent, index)
 	table.remove(ent.ClipData, index)
 	
 	if not next(ent.ClipData) then
-		ProperClipping.RemoveClips(ent)
+		ProperClipping.RemoveClips(ent, keepmass)
 		
 		hook.Run("ProperClippingClipRemoved", ent, index)
 		
@@ -105,7 +105,7 @@ function ProperClipping.RemoveClip(ent, index)
 	end
 	
 	if clip.physics then
-		ProperClipping.ResetPhysics(ent)
+		ProperClipping.ResetPhysics(ent, keepmass)
 		
 		local norms, dists = {}, {}
 		local physcount = 1
@@ -118,7 +118,7 @@ function ProperClipping.RemoveClip(ent, index)
 		end
 		
 		if physcount ~= 1 then
-			ProperClipping.ClipPhysics(ent, norms, dists)
+			ProperClipping.ClipPhysics(ent, norms, dists, keepmass)
 		end
 	end
 	
@@ -131,6 +131,12 @@ function ProperClipping.RemoveClip(ent, index)
 end
 
 function ProperClipping.StoreClips(ent)
+	-- Store mass
+	local physobj = ent:GetPhysicsObject()
+	if IsValid(physobj) then
+		duplicator.StoreEntityModifier(ent, "mass", {Mass = physobj:GetMass()})
+	end
+	
 	-- Clips for self
 	local clips = {}
 	for i, clip in ipairs(ent.ClipData) do
@@ -258,6 +264,17 @@ local function modified(ent)
 	return false
 end
 
+-- Mass
+duplicator.RegisterEntityModifier("mass", function(ply, ent, data)
+	if not data.Mass then return end
+	if not IsValid(ent) then return end
+	
+	local physobj = ent:GetPhysicsObject()
+	if not IsValid(physobj) then return end
+	
+	physobj:SetMass(data.Mass)
+end)
+
 -- Clips from self
 duplicator.RegisterEntityModifier("proper_clipping", function(ply, ent, data)
 	if not IsValid(ent) then return end
@@ -306,7 +323,14 @@ duplicator.RegisterEntityModifier("proper_clipping", function(ply, ent, data)
 			physicss[i] = physics
 		end
 		
-		ProperClipping.AddClip(ent, norms, dists, insides, physicss)
+		if setmass and data.mass then
+			local physobj = ent:GetPhysicsObject()
+			if IsValid(physobj) then
+				physobj:SetMass(data.mass)
+			end
+		end
+		
+		ProperClipping.AddClip(ent, norms, dists, insides, physicss, true)
 		
 		if physcount > physmax and physcount ~= math.huge then
 			ply:ChatPrint("Max physics clips per entity reached (max " .. physmax .. "), " .. tostring(ent) .. " will only have " .. physmax .. " instead of " .. physcount .. ".")

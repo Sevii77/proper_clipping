@@ -140,12 +140,12 @@ function ProperClipping.GetPhysObjData(ent, physobj)
 	}
 end
 
-function ProperClipping.ApplyPhysObjData(physobj, physdata)
-	physobj:SetMass(math.max(1, physobj:GetVolume() / physdata.vol * physdata.mass))
+function ProperClipping.ApplyPhysObjData(physobj, physdata, keepmass)
 	physobj:SetMaterial(physdata.mat)
 	physobj:SetContents(physdata.contents)
 	
 	if SERVER then
+		physobj:SetMass(keepmass and physdata.mass or math.max(1, physobj:GetVolume() / physdata.vol * physdata.mass))
 		physobj:EnableMotion(physdata.motion)
 		if physdata.motion then
 			physobj:Wake()
@@ -169,7 +169,7 @@ function ProperClipping.ApplyPhysObjData(physobj, physdata)
 	end
 end
 
-function ProperClipping.ClipPhysics(ent, norm, dist)
+function ProperClipping.ClipPhysics(ent, norm, dist, keepmass)
 	if not class_whitelist[ent:GetClass()] and not ent:IsScripted() then return end
 	if hook.Run("ProperClippingCanPhysicsClip", ent) == false then return end
 	
@@ -232,7 +232,7 @@ function ProperClipping.ClipPhysics(ent, norm, dist)
 	physobj = ent:GetPhysicsObject()
 	
 	-- Apply stored properties to the new physobj
-	ProperClipping.ApplyPhysObjData(physobj, data)
+	ProperClipping.ApplyPhysObjData(physobj, data, keepmass)
 	
 	if CLIENT then
 		clippedPhysics[ent] = physobj
@@ -245,7 +245,7 @@ function ProperClipping.ClipPhysics(ent, norm, dist)
 	hook.Run("ProperClippingPhysicsClipped", ent, norm, dist)
 end
 
-function ProperClipping.ResetPhysics(ent)
+function ProperClipping.ResetPhysics(ent, keepmass)
 	if not ent.PhysicsClipped then return end
 	
 	ent.PhysicsClipped = nil
@@ -264,7 +264,7 @@ function ProperClipping.ResetPhysics(ent)
 	physobj = ent:GetPhysicsObject()
 	
 	if data then
-		ProperClipping.ApplyPhysObjData(physobj, data)
+		ProperClipping.ApplyPhysObjData(physobj, data, keepmass)
 	end
 	
 	if CLIENT then
