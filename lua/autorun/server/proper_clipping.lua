@@ -11,7 +11,7 @@ function ProperClipping.CanAddClip(ent, ply)
 	return hook.Run("CanTool", ply, {Entity = ent}, "proper_clipping") and true or false
 end
 
-function ProperClipping.AddClip(ent, norm, dist, inside, physics, keepmass)
+function ProperClipping.AddClip(ent, norm, dist, inside, physics, keepmass, suppress_physics)
 	if not ProperClipping.ClippedEntities[ent] then
 		ProperClipping.ClippedEntities[ent] = ent
 		ent:CallOnRemove("proper_clipping", function()
@@ -58,7 +58,7 @@ function ProperClipping.AddClip(ent, norm, dist, inside, physics, keepmass)
 		end
 	end
 	
-	if physcount ~= 1 then
+	if not suppress_physics and physcount ~= 1 then
 		ProperClipping.ClipPhysics(ent, norms, dists, keepmass)
 	end
 	
@@ -323,7 +323,21 @@ duplicator.RegisterEntityModifier("proper_clipping", function(ply, ent, data)
 			physicss[i] = physics
 		end
 		
+		if AdvDupe2 then
+			for _, queue in ipairs(AdvDupe2.JobManager.Queue) do
+				for _, e in pairs(queue.CreatedEntities) do
+					if e == ent then
+						ProperClipping.AddClip(ent, norms, dists, insides, physicss, true, true)
+						
+						goto NOPHYS
+					end
+				end
+			end
+		end
+		
 		ProperClipping.AddClip(ent, norms, dists, insides, physicss, true)
+		
+		::NOPHYS::
 		
 		if physcount > physmax and physcount ~= math.huge then
 			ply:ChatPrint("Max physics clips per entity reached (max " .. physmax .. "), " .. tostring(ent) .. " will only have " .. physmax .. " instead of " .. physcount .. ".")
@@ -379,4 +393,29 @@ duplicator.RegisterEntityModifier("clipping_all_prop_clips", function(ply, ent, 
 			end
 		end
 	end)
+end)
+
+-- Handle parented entities spawned with advdupe2
+hook.Add("AdvDupe_FinishPasting", "proper_clipping", function(dupe)
+	local ents = dupe[1].CreatedEntities
+	for id, data in pairs(dupe[1].EntityList) do
+		local ent = ents[id]
+		if not ent.Clipped then goto SKIP end
+		
+		local norms, dists = {}, {}
+		local physcount = 1
+		for _, clip in ipairs(ent.ClipData) do
+			if clip.physics then
+				norms[physcount] = clip.norm
+				dists[physcount] = clip.dist
+				physcount = physcount + 1
+			end
+		end
+		
+		if physcount ~= 1 then
+			ProperClipping.ClipPhysics(ent, norms, dists, true)
+		end
+		
+		::SKIP::
+	end
 end)
