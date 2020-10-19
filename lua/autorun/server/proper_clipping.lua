@@ -323,13 +323,6 @@ duplicator.RegisterEntityModifier("proper_clipping", function(ply, ent, data)
 			physicss[i] = physics
 		end
 		
-		if setmass and data.mass then
-			local physobj = ent:GetPhysicsObject()
-			if IsValid(physobj) then
-				physobj:SetMass(data.mass)
-			end
-		end
-		
 		ProperClipping.AddClip(ent, norms, dists, insides, physicss, true)
 		
 		if physcount > physmax and physcount ~= math.huge then
