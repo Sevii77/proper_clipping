@@ -397,9 +397,7 @@ end)
 
 -- Handle parented entities spawned with advdupe2
 hook.Add("AdvDupe_FinishPasting", "proper_clipping", function(dupe)
-	local ents = dupe[1].CreatedEntities
-	for id, data in pairs(dupe[1].EntityList) do
-		local ent = ents[id]
+	for id, ent in pairs(dupe[1].CreatedEntities) do
 		if not ent.Clipped then goto SKIP end
 		
 		local norms, dists = {}, {}
