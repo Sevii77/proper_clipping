@@ -131,6 +131,7 @@ end
 
 function ProperClipping.GetPhysObjData(ent, physobj)
 	return {
+		damping = {physobj:GetDamping()},
 		vol = physobj:GetVolume(),
 		mass = physobj:GetMass(),
 		mat = physobj:GetMaterial(),
@@ -141,6 +142,7 @@ function ProperClipping.GetPhysObjData(ent, physobj)
 end
 
 function ProperClipping.ApplyPhysObjData(physobj, physdata, keepmass)
+	physobj:SetDamping(unpack(physdata.damping))
 	physobj:SetMaterial(physdata.mat)
 	physobj:SetContents(physdata.contents)
 	
