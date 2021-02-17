@@ -7,14 +7,18 @@ TOOL.ClientConVar.physics = "0" -- bool
 TOOL.ClientConVar.keepmass = "0" -- bool
 
 if CLIENT then
+	local function updateInfo()
+		language.Add("Tool.proper_clipping.info1", "Hold " .. string.upper(input.LookupBinding("+walk") or "(+walk unbound)") .. " to invert the plane normal")
+		language.Add("Tool.proper_clipping.info2", "Hold " .. string.upper(input.LookupBinding("+speed") or "(+speed unbound)") .. " to enable inside rendering")
+	end
+	
 	language.Add("Tool.proper_clipping.name", "Proper Clipping")
 	language.Add("Tool.proper_clipping.desc", "Visually or Physically clip entities")
 	
 	language.Add("Tool.proper_clipping.mode.0", "Hitplane")
 	language.Add("Tool.proper_clipping.mode.1", "Point to Point")
 	
-	language.Add("Tool.proper_clipping.info1", "Hold ALT to invert the plane normal")
-	language.Add("Tool.proper_clipping.info2", "Hold SHIFT to enable inside rendering")
+	updateInfo()
 	language.Add("Tool.proper_clipping.right", "Clip entity")
 	language.Add("Tool.proper_clipping.reload", "Remove all clips")
 	
@@ -72,6 +76,7 @@ if CLIENT then
 		})
 	end
 	
+	TOOL.Deploy = updateInfo
 end
 
 ----------------------------------------
