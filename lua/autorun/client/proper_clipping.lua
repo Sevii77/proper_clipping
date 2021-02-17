@@ -88,6 +88,8 @@ local clip_queue = {}
 local function attemptClip(id, clips)
 	local ent = Entity(id)
 	if not IsValid(ent) then return false end
+	-- Wait for the spawneffect to end before we clip the entity
+	if ent.SpawnEffect then return false end
 	
 	ProperClipping.RemoveVisualClips(ent)
 	ProperClipping.ResetPhysics(ent)
