@@ -130,6 +130,11 @@ function ProperClipping.CanAddPhysicsClip(ent, ply)
 end
 
 function ProperClipping.GetPhysObjData(ent, physobj)
+	local constraints = SERVER and constraint.GetTable(ent) or nil
+	if SERVER then
+		constraint.RemoveAll(ent)
+	end
+	
 	return {
 		damping = {physobj:GetDamping()},
 		vol = physobj:GetVolume(),
@@ -137,7 +142,7 @@ function ProperClipping.GetPhysObjData(ent, physobj)
 		mat = physobj:GetMaterial(),
 		contents = physobj:GetContents(),
 		motion = physobj:IsMotionEnabled(),
-		constraints = SERVER and constraint.GetTable(ent) or nil
+		constraints = constraints
 	}
 end
 
@@ -155,14 +160,13 @@ function ProperClipping.ApplyPhysObjData(physobj, physdata, keepmass)
 		
 		timer.Simple(0, function()
 			for _, data in ipairs(physdata.constraints) do
-				local constraint = dConstraints[data.Type]
+				local con = dConstraints[data.Type]
 				local args = {}
-				
-				for i, arg in ipairs(constraint.Args) do
+				for i, arg in ipairs(con.Args) do
 					args[i] = data[arg]
 				end
 				
-				constraint.Func(unpack(args)) -- Forcing constraints to create themselves again
+				con.Func(unpack(args))
 			end
 		end)
 	else
@@ -224,6 +228,10 @@ function ProperClipping.ClipPhysics(ent, norm, dist, keepmass)
 		
 		new = new2
 	end
+	
+	-- Can crash without this
+	-- https://github.com/Facepunch/garrysmod/blob/master/garrysmod/lua/entities/sent_ball.lua#L75
+	ent.ConstraintSystem = nil
 	
 	-- Make new one
 	if not ent:PhysicsInitMultiConvex(new) then return end
