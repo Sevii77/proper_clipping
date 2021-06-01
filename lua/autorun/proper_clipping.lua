@@ -146,6 +146,7 @@ function ProperClipping.GetPhysObjData(ent, physobj)
 	}
 end
 
+local constraint_timers = {}
 function ProperClipping.ApplyPhysObjData(physobj, physdata, keepmass)
 	physobj:SetDamping(unpack(physdata.damping))
 	physobj:SetMaterial(physdata.mat)
@@ -158,17 +159,23 @@ function ProperClipping.ApplyPhysObjData(physobj, physdata, keepmass)
 			physobj:Wake()
 		end
 		
-		timer.Simple(0, function()
-			for _, data in ipairs(physdata.constraints) do
-				local con = dConstraints[data.Type]
-				local args = {}
-				for i, arg in ipairs(con.Args) do
-					args[i] = data[arg]
-				end
-				
-				con.Func(unpack(args))
+		for _, data in ipairs(physdata.constraints) do
+			local con = dConstraints[data.Type]
+			local args = {}
+			for i, arg in ipairs(con.Args) do
+				args[i] = data[arg]
 			end
-		end)
+			
+			local id = util.TableToJSON(args)
+			if not constraint_timers[id] then
+				constraint_timers[id] = true
+				
+				timer.Simple(0, function()
+					con.Func(unpack(args))
+					constraint_timers[id] = nil
+				end)
+			end
+		end
 	else
 		physobj:EnableMotion(false)
 		physobj:Sleep()
