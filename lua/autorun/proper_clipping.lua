@@ -162,11 +162,12 @@ function ProperClipping.ApplyPhysObjData(physobj, physdata, keepmass)
 		for _, data in ipairs(physdata.constraints) do
 			local con = dConstraints[data.Type]
 			local args = {}
+			local id = ""
 			for i, arg in ipairs(con.Args) do
 				args[i] = data[arg]
+				id = id .. tostring(data[arg]) .. "\0"
 			end
 			
-			local id = util.TableToJSON(args)
 			if not constraint_timers[id] then
 				constraint_timers[id] = true
 				
