@@ -5,7 +5,7 @@ local registerprivilege = SF.Permissions.registerPrivilege
 registerprivilege("entities.visclip", "Visual Clipping", "Allows the used to add visual clips to entities", { entities = {} })
 registerprivilege("entities.physclip", "Physics Clipping", "Allows the used to add physics clips to entities", { entities = {} })
 
-----------------------------------------
+-- --------------------------------------
 -- Instance
 
 return function(instance)
@@ -18,7 +18,7 @@ instance:AddHook("initialize", function()
 	getent = instance.Types.Entity.GetEntity
 end)
 
-----------------------------------------
+-- --------------------------------------
 -- Check funcs
 
 local function checkvis(ent)
@@ -35,7 +35,7 @@ local function checkphys(ent)
 	end
 end
 
-----------------------------------------
+-- --------------------------------------
 -- Methods
 
 --- Creates visual clip
@@ -126,7 +126,7 @@ function ents_methods:getClipIndex(origin, normal)
 end
 
 --- Returns the amount of physics clips left
--- @returns Count number
+-- @return Count number
 function ents_methods:physicsClipsLeft()
 	local ent = getent(self)
 	return ProperClipping.PhysicsClipsLeft(ent)
