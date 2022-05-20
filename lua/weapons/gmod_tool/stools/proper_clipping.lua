@@ -17,6 +17,7 @@ if CLIENT then
 	
 	language.Add("Tool.proper_clipping.mode.0", "Hitplane")
 	language.Add("Tool.proper_clipping.mode.1", "Point to Point")
+	language.Add("Tool.proper_clipping.mode.2", "2 Hitplanes intersection")
 	
 	updateInfo()
 	language.Add("Tool.proper_clipping.right", "Clip entity")
@@ -26,6 +27,8 @@ if CLIENT then
 	
 	language.Add("Tool.proper_clipping.left_op1_stage0", "Define start point")
 	language.Add("Tool.proper_clipping.left_op1_stage1", "Define end point")
+
+	language.Add("Tool.proper_clipping.left_op2", "Define intersecting planes. The last 2 of them are used to calculate intersection")
 	
 	TOOL.Information = {
 		{stage = 0, name = "info1"},
@@ -36,6 +39,8 @@ if CLIENT then
 		
 		{op = 1, stage = 0, name = "left_op1_stage0"},
 		{op = 1, stage = 1, name = "left_op1_stage1"},
+		
+		{op = 2, name = "left_op2"},
 		
 		{stage = 0, name = "right"}
 	}
@@ -53,7 +58,8 @@ if CLIENT then
 			Label = "Mode",
 			Options = {
 				["#Tool.proper_clipping.mode.0"] = {proper_clipping_mode = 0},
-				["#Tool.proper_clipping.mode.1"] = {proper_clipping_mode = 1}
+				["#Tool.proper_clipping.mode.1"] = {proper_clipping_mode = 1},
+				["#Tool.proper_clipping.mode.2"] = {proper_clipping_mode = 2}
 			}
 		})
 		
@@ -112,6 +118,19 @@ function TOOL:LeftClick(tr)
 			self.norm = (tr.HitPos - self.origin):GetNormalized()
 			self:SetStage(0)
 		end
+	elseif op == 2 then
+		local pln1 = {origin = tr.HitPos, norm = tr.HitNormal}
+		local pln2 = self.plane or pln1
+		local lineNorm = pln1.norm:Cross(pln2.norm)
+		local lineLen2 = lineNorm:LengthSqr()
+		if lineLen2 > 1e-10 then
+			self.norm = lineNorm:Cross(pln1.norm + pln2.norm):GetNormalized()
+			self.origin = pln1.origin + lineNorm:Cross(pln2.norm) * pln2.norm:Dot(pln2.origin - pln1.origin) / lineLen2
+		else
+			self.norm = tr.HitNormal
+			self.origin = tr.HitPos
+		end
+		self.plane = pln1
 	end
 	
 	if game.SinglePlayer() then
