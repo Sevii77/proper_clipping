@@ -260,7 +260,20 @@ if CLIENT then
 	model2:SetMaterial("models/debug/debugwhite")
 	model1:SetNoDraw(true)
 	model2:SetNoDraw(true)
-	
+
+	local debugwhite = Material("models/debug/debugwhite")
+
+	local function DrawPreviewModel(self)
+		if isentity(self.GetRenderMesh) then
+			render.ModelMaterialOverride(debugwhite)
+			self.GetRenderMesh:DrawModel()
+			render.ModelMaterialOverride(nil)
+			return
+		end
+
+		self:DrawModel()
+	end
+
 	local last_ent
 	
 	hook.Add("PostDrawOpaqueRenderables", "proper_clipping", function(depth, skybox)
@@ -327,6 +340,9 @@ if CLIENT then
 						model1:SetBodygroup(id, val)
 						model2:SetBodygroup(id, val)
 					end
+
+					model1.GetRenderMesh = isfunction(ent.GetRenderMesh) and ent or nil
+					model2.GetRenderMesh = isfunction(ent.GetRenderMesh) and ent or nil
 				end
 				
 				ent:SetNoDraw(true)
@@ -338,12 +354,12 @@ if CLIENT then
 				
 				render.PushCustomClipPlane(norm * (i and 1 or -1), norm:Dot(origin) * (i and 1 or -1) - offset)
 				render.SetColorModulation(0.3, 2, 0.5)
-				model1:DrawModel()
+				DrawPreviewModel(model1)
 				render.PopCustomClipPlane()
 				
 				render.PushCustomClipPlane(norm * (i and -1 or 1), norm:Dot(origin) * (i and -1 or 1) + offset)
 				render.SetColorModulation(2, 0.2, 0.3)
-				model2:DrawModel()
+				DrawPreviewModel(model2)
 				render.PopCustomClipPlane()
 				
 				render.EnableClipping(prev)
