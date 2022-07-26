@@ -263,7 +263,7 @@ if CLIENT then
 
 	local debugwhite = Material("models/debug/debugwhite")
 
-	local function DrawPreviewModel( self )
+	local function DrawPreviewModel(self)
 		if isentity(self.GetRenderMesh) then
 			render.ModelMaterialOverride(debugwhite)
 			self.GetRenderMesh:DrawModel()
