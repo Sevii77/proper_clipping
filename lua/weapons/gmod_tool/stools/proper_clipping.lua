@@ -341,8 +341,8 @@ if CLIENT then
 						model2:SetBodygroup(id, val)
 					end
 
-					model1.GetRenderMesh = isfunction( ent.GetRenderMesh ) and ent or nil
-					model2.GetRenderMesh = isfunction( ent.GetRenderMesh ) and ent or nil
+					model1.GetRenderMesh = isfunction(ent.GetRenderMesh) and ent or nil
+					model2.GetRenderMesh = isfunction(ent.GetRenderMesh) and ent or nil
 				end
 				
 				ent:SetNoDraw(true)
@@ -354,12 +354,12 @@ if CLIENT then
 				
 				render.PushCustomClipPlane(norm * (i and 1 or -1), norm:Dot(origin) * (i and 1 or -1) - offset)
 				render.SetColorModulation(0.3, 2, 0.5)
-				DrawPreviewModel( model1 )
+				DrawPreviewModel(model1)
 				render.PopCustomClipPlane()
 				
 				render.PushCustomClipPlane(norm * (i and -1 or 1), norm:Dot(origin) * (i and -1 or 1) + offset)
 				render.SetColorModulation(2, 0.2, 0.3)
-				DrawPreviewModel( model2 )
+				DrawPreviewModel(model2)
 				render.PopCustomClipPlane()
 				
 				render.EnableClipping(prev)
