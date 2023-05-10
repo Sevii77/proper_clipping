@@ -5,6 +5,8 @@ TOOL.ClientConVar.mode    = "0" -- int
 TOOL.ClientConVar.offset  = "0" -- float
 TOOL.ClientConVar.physics = "0" -- bool
 TOOL.ClientConVar.keepmass = "0" -- bool
+TOOL.ClientConVar.classic_pitch = "0" -- float	
+TOOL.ClientConVar.classic_yaw = "0" -- float
 
 if CLIENT then
 	local function updateInfo()
@@ -18,6 +20,7 @@ if CLIENT then
 	language.Add("Tool.proper_clipping.mode.0", "Hitplane")
 	language.Add("Tool.proper_clipping.mode.1", "Point to Point")
 	language.Add("Tool.proper_clipping.mode.2", "2 Hitplanes intersection")
+	language.Add("Tool.proper_clipping.mode.3", "Classic Visclip")
 	
 	updateInfo()
 	language.Add("Tool.proper_clipping.right", "Clip entity")
@@ -44,55 +47,103 @@ if CLIENT then
 		
 		{stage = 0, name = "right"}
 	}
-	
+
+	local function makeSlider(panel, label, cvar, min, max, decimals)
+		local slider = vgui.Create("DNumSlider", panel)
+		slider:SetText(label)
+		slider:SetMin(min)
+		slider:SetMax(max)
+		slider:SetDecimals(decimals)
+		slider:SetConVar(cvar)
+		slider:SetDark(true)
+		slider:DockMargin(10, 5, 5, 0)
+		slider:Dock(TOP)
+
+		return slider
+	end
+
 	function TOOL.BuildCPanel(panel)
 		local cvar_visual = GetConVar("proper_clipping_max_visual")
-		panel:AddControl("Slider", {
-			label = "Max Visual Clips",
-			command = "proper_clipping_max_visual",
-			min = cvar_visual:GetMin(),
-			max = cvar_visual:GetMax()
-		})
-		
-		panel:AddControl("ListBox", {
-			Label = "Mode",
-			Options = {
-				["#Tool.proper_clipping.mode.0"] = {proper_clipping_mode = 0},
-				["#Tool.proper_clipping.mode.1"] = {proper_clipping_mode = 1},
-				["#Tool.proper_clipping.mode.2"] = {proper_clipping_mode = 2}
-			}
-		})
-		
-		panel:AddControl("Slider", {
-			label = "Offset",
-			type = "float",
-			command = "proper_clipping_offset",
-			min = -50,
-			max =  50
-		})
-		
-		panel:AddControl("Checkbox", {
-			label = "Physics",
-			command = "proper_clipping_physics"
-		})
-		
-		panel:AddControl("Checkbox", {
-			label = "Keep Mass",
-			command = "proper_clipping_keepmass"
-		})
+
+		makeSlider(panel, "Max Visual Clips", "proper_clipping_max_visual", cvar_visual:GetMin(), cvar_visual:GetMax(), 0)
+
+		local physics = vgui.Create("DCheckBoxLabel", panel)
+		physics:SetText("Physics")
+		physics:SetConVar("proper_clipping_physics")
+		physics:DockMargin(10, 10, 5, 0)
+		physics:Dock(TOP)
+		physics:SetDark(true)
+
+		local keepMass = vgui.Create("DCheckBoxLabel", panel)
+		keepMass:SetText("Keep Mass")
+		keepMass:SetConVar("proper_clipping_keepmass")
+		keepMass:DockMargin(10, 10, 5, 0)
+		keepMass:Dock(TOP)
+		keepMass:SetDark(true)
+
+		local newSettings = {}
+		local mode = vgui.Create("DComboBox", panel)
+		mode:AddChoice("#Tool.proper_clipping.mode.0", 0, true)
+		mode:AddChoice("#Tool.proper_clipping.mode.1", 1)
+		mode:AddChoice("#Tool.proper_clipping.mode.2", 2)
+		mode:AddChoice("#Tool.proper_clipping.mode.3", 3)
+		mode:SetText("#Tool.proper_clipping.mode.0")
+		function mode:OnSelect(_, _, val)
+			RunConsoleCommand("proper_clipping_mode", val)
+
+			if val == 3 then
+				for _, v in ipairs(newSettings) do
+					v:SetVisible(true)
+					v:Dock(TOP)
+				end
+			else
+				for _, v in ipairs(newSettings) do
+					v:SetVisible(false)
+				end
+			end
+		end
+		mode:DockMargin(10, 10, 5, 0)
+		mode:Dock(TOP)
+
+		makeSlider(panel, "Offset", "proper_clipping_offset", -100, 100, 2)
+
+		-- Old visclip (non advanced) settings
+		do
+			local pitch = makeSlider(panel, "Pitch", "proper_clipping_classic_pitch", -180, 180, 2)
+			pitch:SetVisible(false)
+			table.insert(newSettings, pitch)
+
+			local yaw = makeSlider(panel, "Yaw", "proper_clipping_classic_yaw", -180, 180, 2)
+			yaw:SetVisible(false)
+			table.insert(newSettings, yaw)
+		end
 	end
-	
+
 	TOOL.Deploy = updateInfo
 end
 
 ----------------------------------------
 
 function TOOL:Think()
-	local new = math.floor(self:GetClientNumber("mode"))
+	local op = math.floor(self:GetClientNumber("mode"))
+	local ply = self:GetOwner()
+
+	if op == 3 then
+		local ent = ply:GetEyeTrace().Entity
+		if not IsValid(ent) then return end
+		if ent:IsPlayer() or ent:IsWorld() then return end
+
+		local ang = Angle(self:GetClientNumber("classic_pitch"), self:GetClientNumber("classic_yaw"), 0)
+		local dir = ang:Forward()
+		local dist = self:GetClientNumber("offset")
+
+		self.norm = dir
+		self.origin = ent:GetPos() + dir * dist
+	end
+
+	if op == self:GetOperation() then return end
 	
-	if new == self:GetOperation() then return end
-	
-	self:SetOperation(new)
+	self:SetOperation(op)
 	self:SetStage(0)
 end
 
