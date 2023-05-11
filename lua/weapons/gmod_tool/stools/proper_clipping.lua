@@ -285,7 +285,7 @@ function TOOL:RightClick(tr)
 	
 	ProperClipping.AddClip(ent, norm, dist, owner:KeyDown(IN_SPEED), physics, keepmass)
 
-	if not GetConVar("proper_clipping_undo"):GetBool() then return true end
+	if not self:GetClientBool("undo") then return true end
 
 	undo.Create("Proper Clip")
 	undo.AddFunction(function(_, ent, norm, dist, keepmass)
