@@ -92,6 +92,7 @@ if CLIENT then
 		mode:AddChoice("#Tool.proper_clipping.mode.2", 2)
 		mode:AddChoice("#Tool.proper_clipping.mode.3", 3)
 		mode:SetText("#Tool.proper_clipping.mode." .. cvar_mode_val)
+
 		function mode:OnSelect(_, _, val)
 			cvar_mode:SetInt(val)
 
@@ -104,21 +105,32 @@ if CLIENT then
 					v:SetVisible(false)
 				end
 			end
+
+			panel:InvalidateLayout()
 		end
+
 		mode:DockMargin(10, 10, 5, 0)
 		mode:Dock(TOP)
 
-		makeSlider(panel, "Offset", "proper_clipping_offset", -100, 100, 2)
+		local offset = makeSlider(panel, "Offset", "proper_clipping_offset", -100, 100, 2)
 
-		-- Old visclip (non advanced) settings
-		do
-			local pitch = makeSlider(panel, "Pitch", "proper_clipping_pitch", -180, 180, 2)
-			pitch:SetVisible(cvar_mode_val == 3)
-			table.insert(newSettings, pitch)
+		local pitch = makeSlider(panel, "Pitch", "proper_clipping_pitch", -180, 180, 2)
+		pitch:SetVisible(cvar_mode_val == 3)
+		table.insert(newSettings, pitch)
 
-			local yaw = makeSlider(panel, "Yaw", "proper_clipping_yaw", -180, 180, 2)
-			yaw:SetVisible(cvar_mode_val == 3)
-			table.insert(newSettings, yaw)
+		local yaw = makeSlider(panel, "Yaw", "proper_clipping_yaw", -180, 180, 2)
+		yaw:SetVisible(cvar_mode_val == 3)
+		table.insert(newSettings, yaw)
+
+		local reset = vgui.Create("DButton", panel)
+		reset:SetText("Reset Values")
+		reset:SetDark(true)
+		reset:DockMargin(10, 5, 5, 0)
+		reset:Dock(TOP)
+		reset.DoClick = function()
+			offset:SetValue(0)
+			pitch:SetValue(0)
+			yaw:SetValue(0)
 		end
 	end
 
