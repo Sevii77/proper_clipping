@@ -5,8 +5,9 @@ TOOL.ClientConVar.mode    = "0" -- int
 TOOL.ClientConVar.offset  = "0" -- float
 TOOL.ClientConVar.physics = "0" -- bool
 TOOL.ClientConVar.keepmass = "0" -- bool
-TOOL.ClientConVar.classic_pitch = "0" -- float	
-TOOL.ClientConVar.classic_yaw = "0" -- float
+TOOL.ClientConVar.pitch = "0" -- float	
+TOOL.ClientConVar.yaw = "0" -- float
+TOOL.ClientConVar.undo = "0" -- bool
 
 if CLIENT then
 	local function updateInfo()
@@ -20,7 +21,7 @@ if CLIENT then
 	language.Add("Tool.proper_clipping.mode.0", "Hitplane")
 	language.Add("Tool.proper_clipping.mode.1", "Point to Point")
 	language.Add("Tool.proper_clipping.mode.2", "2 Hitplanes intersection")
-	language.Add("Tool.proper_clipping.mode.3", "Classic Visclip")
+	language.Add("Tool.proper_clipping.mode.3", "Pitch and Yaw")
 	
 	updateInfo()
 	language.Add("Tool.proper_clipping.right", "Clip entity")
@@ -62,24 +63,27 @@ if CLIENT then
 		return slider
 	end
 
+	local function makeCheckbox(panel, label, cvar)
+		local checkbox = vgui.Create("DCheckBoxLabel", panel)
+		checkbox:SetText(label)
+		checkbox:SetConVar(cvar)
+		checkbox:DockMargin(10, 5, 5, 10)
+		checkbox:Dock(TOP)
+		checkbox:SetDark(true)
+
+		return checkbox
+	end
+
 	function TOOL.BuildCPanel(panel)
 		local cvar_visual = GetConVar("proper_clipping_max_visual")
+		local cvar_mode = GetConVar("proper_clipping_mode")
+		local cvar_mode_val = cvar_mode:GetInt()
 
 		makeSlider(panel, "Max Visual Clips", "proper_clipping_max_visual", cvar_visual:GetMin(), cvar_visual:GetMax(), 0)
 
-		local physics = vgui.Create("DCheckBoxLabel", panel)
-		physics:SetText("Physics")
-		physics:SetConVar("proper_clipping_physics")
-		physics:DockMargin(10, 10, 5, 0)
-		physics:Dock(TOP)
-		physics:SetDark(true)
-
-		local keepMass = vgui.Create("DCheckBoxLabel", panel)
-		keepMass:SetText("Keep Mass")
-		keepMass:SetConVar("proper_clipping_keepmass")
-		keepMass:DockMargin(10, 10, 5, 0)
-		keepMass:Dock(TOP)
-		keepMass:SetDark(true)
+		makeCheckbox(panel, "Physical clip", "proper_clipping_physics")
+		makeCheckbox(panel, "Keep mass when physics clipping", "proper_clipping_keepmass")
+		makeCheckbox(panel, "Add clips to undo list", "proper_clipping_undo")
 
 		local newSettings = {}
 		local mode = vgui.Create("DComboBox", panel)
@@ -87,14 +91,13 @@ if CLIENT then
 		mode:AddChoice("#Tool.proper_clipping.mode.1", 1)
 		mode:AddChoice("#Tool.proper_clipping.mode.2", 2)
 		mode:AddChoice("#Tool.proper_clipping.mode.3", 3)
-		mode:SetText("#Tool.proper_clipping.mode.0")
+		mode:SetText("#Tool.proper_clipping.mode." .. cvar_mode_val)
 		function mode:OnSelect(_, _, val)
-			RunConsoleCommand("proper_clipping_mode", val)
+			cvar_mode:SetInt(val)
 
 			if val == 3 then
 				for _, v in ipairs(newSettings) do
 					v:SetVisible(true)
-					v:Dock(TOP)
 				end
 			else
 				for _, v in ipairs(newSettings) do
@@ -109,12 +112,12 @@ if CLIENT then
 
 		-- Old visclip (non advanced) settings
 		do
-			local pitch = makeSlider(panel, "Pitch", "proper_clipping_classic_pitch", -180, 180, 2)
-			pitch:SetVisible(false)
+			local pitch = makeSlider(panel, "Pitch", "proper_clipping_pitch", -180, 180, 2)
+			pitch:SetVisible(cvar_mode_val == 3)
 			table.insert(newSettings, pitch)
 
-			local yaw = makeSlider(panel, "Yaw", "proper_clipping_classic_yaw", -180, 180, 2)
-			yaw:SetVisible(false)
+			local yaw = makeSlider(panel, "Yaw", "proper_clipping_yaw", -180, 180, 2)
+			yaw:SetVisible(cvar_mode_val == 3)
 			table.insert(newSettings, yaw)
 		end
 	end
@@ -133,7 +136,7 @@ function TOOL:Think()
 		if not IsValid(ent) then return end
 		if ent:IsPlayer() or ent:IsWorld() then return end
 
-		local ang = Angle(self:GetClientNumber("classic_pitch"), self:GetClientNumber("classic_yaw"), 0)
+		local ang = Angle(self:GetClientNumber("pitch"), self:GetClientNumber("yaw"), 0)
 		local dir = ang:Forward()
 		local dist = self:GetClientNumber("offset")
 
@@ -269,7 +272,9 @@ function TOOL:RightClick(tr)
 	end
 	
 	ProperClipping.AddClip(ent, norm, dist, owner:KeyDown(IN_SPEED), physics, keepmass)
-	
+
+	if not GetConVar("proper_clipping_undo"):GetBool() then return true end
+
 	undo.Create("Proper Clip")
 	undo.AddFunction(function(_, ent, norm, dist, keepmass)
 		if not ent or not ent:IsValid() then return end
