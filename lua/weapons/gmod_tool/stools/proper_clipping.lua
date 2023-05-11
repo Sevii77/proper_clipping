@@ -364,6 +364,8 @@ if CLIENT then
 		
 		local tr = ply:GetEyeTrace()
 		local ent = tr.Entity
+
+		if ent:GetBrushSurfaces() then return end
 		
 		local op = tool:GetOperation()
 		local stage = tool:GetStage()
