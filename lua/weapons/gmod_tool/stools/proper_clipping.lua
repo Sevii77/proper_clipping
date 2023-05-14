@@ -364,8 +364,6 @@ if CLIENT then
 		
 		local tr = ply:GetEyeTrace()
 		local ent = tr.Entity
-
-		if ent:GetBrushSurfaces() then return end
 		
 		local op = tool:GetOperation()
 		local stage = tool:GetStage()
@@ -388,9 +386,9 @@ if CLIENT then
 		else
 			local norm = tool.norm
 			if not norm then return end
-			
+
 			-- Preview
-			if ent and ent:IsValid() and not ent:IsPlayer() then
+			if ent and ent:IsValid() and not ent:IsPlayer() and not ent:GetBrushSurfaces() then
 				if ent ~= last_ent then
 					local mdl = ent:GetModel()
 					model1:SetModel(mdl)
