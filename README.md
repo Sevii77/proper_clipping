@@ -34,6 +34,9 @@ Client Convars:
 - proper_clipping_mode
 - proper_clipping_offset
 - proper_clipping_physics
+- proper_clipping_pitch
+- proper_clipping_yaw
+- proper_clipping_undo
 
 ---
 
