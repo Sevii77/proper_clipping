@@ -7,7 +7,7 @@ TOOL.ClientConVar.physics = "0" -- bool
 TOOL.ClientConVar.keepmass = "0" -- bool
 TOOL.ClientConVar.pitch = "0" -- float	
 TOOL.ClientConVar.yaw = "0" -- float
-TOOL.ClientConVar.undo = "0" -- bool
+TOOL.ClientConVar.undo = "1" -- bool
 
 if CLIENT then
 	local function updateInfo()
@@ -31,7 +31,7 @@ if CLIENT then
 	
 	language.Add("Tool.proper_clipping.left_op1_stage0", "Define start point")
 	language.Add("Tool.proper_clipping.left_op1_stage1", "Define end point")
-
+	
 	language.Add("Tool.proper_clipping.left_op2", "Define intersecting planes. The last 2 of them are used to calculate intersection")
 	
 	TOOL.Information = {
@@ -48,7 +48,7 @@ if CLIENT then
 		
 		{stage = 0, name = "right"}
 	}
-
+	
 	local function makeSlider(panel, label, cvar, min, max, decimals)
 		local slider = vgui.Create("DNumSlider", panel)
 		slider:SetText(label)
@@ -59,10 +59,10 @@ if CLIENT then
 		slider:SetDark(true)
 		slider:DockMargin(10, 5, 5, 0)
 		slider:Dock(TOP)
-
+		
 		return slider
 	end
-
+	
 	local function makeCheckbox(panel, label, cvar)
 		local checkbox = vgui.Create("DCheckBoxLabel", panel)
 		checkbox:SetText(label)
@@ -70,58 +70,54 @@ if CLIENT then
 		checkbox:DockMargin(10, 5, 5, 10)
 		checkbox:Dock(TOP)
 		checkbox:SetDark(true)
-
+		
 		return checkbox
 	end
-
+	
 	function TOOL.BuildCPanel(panel)
 		local cvar_visual = GetConVar("proper_clipping_max_visual")
 		local cvar_mode = GetConVar("proper_clipping_mode")
 		local cvar_mode_val = cvar_mode:GetInt()
-
+		
 		makeSlider(panel, "Max Visual Clips", "proper_clipping_max_visual", cvar_visual:GetMin(), cvar_visual:GetMax(), 0)
-
+		
 		makeCheckbox(panel, "Physical clip", "proper_clipping_physics")
 		makeCheckbox(panel, "Keep mass when physics clipping", "proper_clipping_keepmass")
 		makeCheckbox(panel, "Add clips to undo list", "proper_clipping_undo")
-
-		local newSettings = {}
+		
+		local pitch, yaw
 		local mode = vgui.Create("DComboBox", panel)
 		mode:AddChoice("#Tool.proper_clipping.mode.0", 0, true)
 		mode:AddChoice("#Tool.proper_clipping.mode.1", 1)
 		mode:AddChoice("#Tool.proper_clipping.mode.2", 2)
 		mode:AddChoice("#Tool.proper_clipping.mode.3", 3)
 		mode:SetText("#Tool.proper_clipping.mode." .. cvar_mode_val)
-
+		
 		function mode:OnSelect(_, _, val)
 			cvar_mode:SetInt(val)
-
+			
 			if val == 3 then
-				for _, v in ipairs(newSettings) do
-					v:SetVisible(true)
-				end
+				pitch:SetVisible(true)
+				yaw:SetVisible(true)
 			else
-				for _, v in ipairs(newSettings) do
-					v:SetVisible(false)
-				end
+				pitch:SetVisible(false)
+				yaw:SetVisible(false)
 			end
-
+			
 			panel:InvalidateLayout()
 		end
-
+		
 		mode:DockMargin(10, 10, 5, 0)
 		mode:Dock(TOP)
-
+		
 		local offset = makeSlider(panel, "Offset", "proper_clipping_offset", -100, 100, 2)
-
-		local pitch = makeSlider(panel, "Pitch", "proper_clipping_pitch", -180, 180, 2)
+		
+		pitch = makeSlider(panel, "Pitch", "proper_clipping_pitch", -180, 180, 2)
 		pitch:SetVisible(cvar_mode_val == 3)
-		table.insert(newSettings, pitch)
-
-		local yaw = makeSlider(panel, "Yaw", "proper_clipping_yaw", -180, 180, 2)
+		
+		yaw = makeSlider(panel, "Yaw", "proper_clipping_yaw", -180, 180, 2)
 		yaw:SetVisible(cvar_mode_val == 3)
-		table.insert(newSettings, yaw)
-
+		
 		local reset = vgui.Create("DButton", panel)
 		reset:SetText("Reset Values")
 		reset:SetDark(true)
@@ -142,20 +138,20 @@ end
 function TOOL:Think()
 	local op = math.floor(self:GetClientNumber("mode"))
 	local ply = self:GetOwner()
-
+	
 	if op == 3 then
 		local ent = ply:GetEyeTrace().Entity
 		if not IsValid(ent) then return end
 		if ent:IsPlayer() or ent:IsWorld() then return end
-
+		
 		local ang = Angle(self:GetClientNumber("pitch"), self:GetClientNumber("yaw"), 0)
 		local dir = ang:Forward()
 		local dist = self:GetClientNumber("offset")
-
+		
 		self.norm = dir
 		self.origin = ent:GetPos() + dir * dist
 	end
-
+	
 	if op == self:GetOperation() then return end
 	
 	self:SetOperation(op)
@@ -284,20 +280,20 @@ function TOOL:RightClick(tr)
 	end
 	
 	ProperClipping.AddClip(ent, norm, dist, owner:KeyDown(IN_SPEED), physics, keepmass)
-
-	if not self:GetClientBool("undo") then return true end
-
-	undo.Create("Proper Clip")
-	undo.AddFunction(function(_, ent, norm, dist, keepmass)
-		if not ent or not ent:IsValid() then return end
-		
-		local exists, index = ProperClipping.ClipExists(ent, norm, dist)
-		if exists then
-			ProperClipping.RemoveClip(ent, index, keepmass)
-		end
-	end, ent, norm, dist, keepmass)
-	undo.SetPlayer(owner)
-	undo.Finish()
+	
+	if self:GetClientNumber("undo") ~= 0 then
+		undo.Create("Proper Clip")
+		undo.AddFunction(function(_, ent, norm, dist, keepmass)
+			if not ent or not ent:IsValid() then return end
+			
+			local exists, index = ProperClipping.ClipExists(ent, norm, dist)
+			if exists then
+				ProperClipping.RemoveClip(ent, index, keepmass)
+			end
+		end, ent, norm, dist, keepmass)
+		undo.SetPlayer(owner)
+		undo.Finish()
+	end
 	
 	return true
 end
@@ -328,9 +324,9 @@ if CLIENT then
 	model2:SetMaterial("models/debug/debugwhite")
 	model1:SetNoDraw(true)
 	model2:SetNoDraw(true)
-
+	
 	local debugwhite = Material("models/debug/debugwhite")
-
+	
 	local function DrawPreviewModel(self)
 		if isentity(self.GetRenderMesh) then
 			render.ModelMaterialOverride(debugwhite)
@@ -338,10 +334,10 @@ if CLIENT then
 			render.ModelMaterialOverride(nil)
 			return
 		end
-
+		
 		self:DrawModel()
 	end
-
+	
 	local last_ent
 	
 	hook.Add("PostDrawOpaqueRenderables", "proper_clipping", function(depth, skybox)
@@ -386,7 +382,7 @@ if CLIENT then
 		else
 			local norm = tool.norm
 			if not norm then return end
-
+			
 			-- Preview
 			if ent and ent:IsValid() and not ent:IsPlayer() and not ent:GetBrushSurfaces() then
 				if ent ~= last_ent then
@@ -408,7 +404,7 @@ if CLIENT then
 						model1:SetBodygroup(id, val)
 						model2:SetBodygroup(id, val)
 					end
-
+					
 					model1.GetRenderMesh = isfunction(ent.GetRenderMesh) and ent or nil
 					model2.GetRenderMesh = isfunction(ent.GetRenderMesh) and ent or nil
 				end
