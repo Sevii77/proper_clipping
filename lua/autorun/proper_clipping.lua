@@ -160,6 +160,7 @@ function ProperClipping.ApplyPhysObjData(physobj, physdata, keepmass)
 		end
 		
 		for _, data in ipairs(physdata.constraints) do
+			if data.Type == "" then continue end
 			local con = dConstraints[data.Type]
 			local args = {}
 			local id = ""
