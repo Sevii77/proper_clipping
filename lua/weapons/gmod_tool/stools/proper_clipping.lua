@@ -168,6 +168,9 @@ function TOOL:LeftClick(tr)
 		if not ent or not ent:IsValid() then return end
 		if ent:IsPlayer() or ent:IsWorld() then return end
 	end
+	if op == 3 then return end
+	
+	if not IsFirstTimePredicted() then return true end
 	
 	if op == 0 then
 		self.norm = tr.HitNormal
