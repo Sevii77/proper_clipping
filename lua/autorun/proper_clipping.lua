@@ -27,26 +27,35 @@ local class_whitelist = {
 
 if CLIENT then
 	
-	hook.Add("Think", "proper_clipping_physics", function()
-		for ent in pairs(clippedPhysics) do
-			if not IsValid(ent) then
-				clippedPhysics[ent] = nil
-			else
-				local physobj = ent:GetPhysicsObject()
-				if not IsValid(physobj) then
+	local function addHook()
+		hook.Add("Think", "proper_clipping_physics", function()
+			for ent in pairs(clippedPhysics) do
+				if not IsValid(ent) then
 					clippedPhysics[ent] = nil
 				else
-					physobj:SetPos(ent:GetPos())
-					physobj:SetAngles(ent:GetAngles())
+					local physobj = ent:GetPhysicsObject()
+					if not IsValid(physobj) then
+						clippedPhysics[ent] = nil
+					else
+						physobj:SetPos(ent:GetPos())
+						physobj:SetAngles(ent:GetAngles())
+					end
 				end
 			end
-		end
-	end)
-	
+		end)
+	end
+
 	hook.Add("PhysgunPickup", "proper_clipping_physics", function(_, ent)
-		if clippedPhysics[ent] then return false end
+		if not clippedPhysics[ent] then return end
+		addHook()
+		return false
 	end)
-	
+
+	hook.Add("PhysgunDrop", "proper_clipping_physics", function(_, ent)
+		if not clippedPhysics[ent] then return end
+		hook.Remove("Think", "proper_clipping_physics" )
+	end)
+
 	hook.Add("NetworkEntityCreated", "proper_clipping_physics", function(ent)
 		if ent.PhysicsClipped then
 			for _, clip in ipairs(ent.ClipData) do
