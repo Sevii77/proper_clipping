@@ -3,47 +3,61 @@ ProperClipping = ProperClipping or {}
 local cvar_clips = CreateConVar("proper_clipping_max_visual", "6", FCVAR_ARCHIVE, "Max clips a entity can have", 0, 6)
 
 ----------------------------------------
+local render_EnableClipping = render.EnableClipping
+local render_CullMode = render.CullMode
+local render_PopCustomClipPlane = render.PopCustomClipPlane
+local render_PushCustomClipPlane = render.PushCustomClipPlane
+
+local entMeta = FindMetaTable( "Entity" )
+local GetTable = entMeta.GetTable
+local GetPos = entMeta.GetPos
+local GetAngles = entMeta.GetAngles
+local DrawModel = entMeta.DrawModel
+
+local maxClips = cvar_clips:GetInt()
+cvars.AddChangeCallback("proper_clipping_max_visual", function(_, _, new)
+    maxClips = tonumber( new )
+end)
 
 local function renderOverride(self)
-	if not self or not self:IsValid() then return end
-	if not self.Clipped or not self.ClipData then return end
+	local selfTbl = GetTable( self )
+	if not selfTbl.Clipped or not selfTbl.ClipData then return end
 	
-	local prev = render.EnableClipping(true)
-	local max = cvar_clips:GetInt()
+	local prev = render_EnableClipping(true)
 	local planes = 0
 	local inside = false
 	
-	local pos = self:GetPos()
-	local ang = self:GetAngles()
+	local pos = GetPos(self)
+	local ang = GetAngles(self)
 	
-	for i, clip in ipairs(self.ClipData) do
+	for i, clip in ipairs(selfTbl.ClipData) do
 		if not inside and clip.inside then
 			inside = true
 		end
 		
-		if i <= max then
+		if i <= maxClips then
 			planes = i
 			
 			local norm = Vector(clip.norm)
 			norm:Rotate(ang)
 			
-			render.PushCustomClipPlane(norm, norm:Dot(pos + norm * clip.dist))
+			render_PushCustomClipPlane(norm, norm:Dot(pos + norm * clip.dist))
 		end
 	end
 	
-	self:DrawModel()
+	DrawModel(self)
 	
 	if inside then
-		render.CullMode(MATERIAL_CULLMODE_CW)
-		self:DrawModel()
-		render.CullMode(MATERIAL_CULLMODE_CCW)
+		render_CullMode(MATERIAL_CULLMODE_CW)
+		DrawModel(self)
+		render_CullMode(MATERIAL_CULLMODE_CCW)
 	end
 	
 	for _ = 1, planes do
-		render.PopCustomClipPlane()
+		render_PopCustomClipPlane()
 	end
 	
-	render.EnableClipping(prev)
+	render_EnableClipping(prev)
 end
 
 function ProperClipping.AddVisualClip(ent, norm, dist, inside, physics)
