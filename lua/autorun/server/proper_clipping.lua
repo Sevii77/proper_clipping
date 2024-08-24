@@ -236,7 +236,9 @@ hook.Add("PlayerInitialSpawn", "proper_clipping", function(ply)
 			clip_count = clip_count + #ent.ClipData
 		end
 		
-		print("Sending " .. clip_count .. " clips from " .. ent_count .. " entities to " .. ply:GetName())
+		if ent_count > 0 then
+			print("Sending " .. clip_count .. " clips from " .. ent_count .. " entities to " .. ply:GetName())
+		end
 		
 		hook.Remove("SetupMove", id)
 	end)

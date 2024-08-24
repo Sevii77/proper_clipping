@@ -8,7 +8,7 @@ local render_CullMode = render.CullMode
 local render_PopCustomClipPlane = render.PopCustomClipPlane
 local render_PushCustomClipPlane = render.PushCustomClipPlane
 
-local entMeta = FindMetaTable( "Entity" )
+local entMeta = FindMetaTable("Entity")
 local GetTable = entMeta.GetTable
 local GetPos = entMeta.GetPos
 local GetAngles = entMeta.GetAngles
@@ -16,11 +16,11 @@ local DrawModel = entMeta.DrawModel
 
 local maxClips = cvar_clips:GetInt()
 cvars.AddChangeCallback("proper_clipping_max_visual", function(_, _, new)
-    maxClips = tonumber( new )
+	maxClips = tonumber(new)
 end)
 
 local function renderOverride(self)
-	local selfTbl = GetTable( self )
+	local selfTbl = GetTable(self)
 	if not selfTbl.Clipped or not selfTbl.ClipData then return end
 	
 	local prev = render_EnableClipping(true)

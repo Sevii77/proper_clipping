@@ -44,18 +44,18 @@ if CLIENT then
 			end
 		end)
 	end
-
+	
 	hook.Add("PhysgunPickup", "proper_clipping_physics", function(_, ent)
 		if not clippedPhysics[ent] then return end
 		addHook()
 		return false
 	end)
-
+	
 	hook.Add("PhysgunDrop", "proper_clipping_physics", function(_, ent)
 		if not clippedPhysics[ent] then return end
-		hook.Remove("Think", "proper_clipping_physics" )
+		hook.Remove("Think", "proper_clipping_physics")
 	end)
-
+	
 	hook.Add("NetworkEntityCreated", "proper_clipping_physics", function(ent)
 		if ent.PhysicsClipped then
 			for _, clip in ipairs(ent.ClipData) do
