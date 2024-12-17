@@ -22,10 +22,10 @@ end
 local function addclip(self, ent, origin, normal, inside, phys)
 	if not checkvis(ent, self) then return 0 end
 	if phys and not checkphys(ent, self) then return 0 end
-	
+
 	local origin = vec(origin)
 	local normal = vec(normal)
-	
+
 	return ProperClipping.AddClip(ent, normal, normal:Dot(origin), inside, phys) and 1 or 0
 end
 
@@ -46,49 +46,49 @@ end
 -- remove all clips
 e2function number entity:removeClips()
 	local ent = this
-	
+
 	if not checkvis(ent, self) then return 0 end
-	
+
 	return ProperClipping.RemoveClips(ent) and 1 or 0
 end
 
 e2function number entity:removeClip()
 	local ent = this
-	
+
 	if not checkvis(ent, self) then return 0 end
-	
+
 	return ProperClipping.RemoveClips(ent) and 1 or 0
 end
 
 -- remove clip by orgin and normal
 e2function number entity:removeClip(vector origin, vector normal)
 	local ent = this
-	
+
 	if not checkvis(ent, self) then return 0 end
-	
+
 	local origin = vec(origin)
 	local normal = vec(normal)
-	
+
 	local exists, index = ProperClipping.ClipExists(ent, normal, normal:Dot(origin))
 	if not exists then return 0 end
-	
+
 	return ProperClipping.RemoveClip(ent, index) and 1 or 0
 end
 
 -- remove clip by index
 e2function number entity:removeClipByIndex(number index)
 	local ent = this
-	
+
 	if not checkvis(ent, self) then return 0 end
-	
+
 	return ProperClipping.RemoveClip(ent, index) and 1 or 0
 end
 
 e2function number entity:removeClip(number index)
 	local ent = this
-	
+
 	if not checkvis(ent, self) then return 0 end
-	
+
 	return ProperClipping.RemoveClip(ent, index) and 1 or 0
 end
 
@@ -97,7 +97,7 @@ __e2setcost(20)
 e2function number entity:getClipIndex(vector origin, vector normal)
 	local origin = vec(origin)
 	local normal = vec(normal)
-	
+
 	local exists, index = ProperClipping.ClipExists(this, normal, normal:Dot(origin))
 	return exists and index or -1
 end

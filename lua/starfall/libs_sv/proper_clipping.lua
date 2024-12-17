@@ -46,16 +46,16 @@ end
 -- @return True or false if it was succesfull
 function ents_methods:addClip(origin, normal, inside, phys)
 	local ent = getent(self)
-	
+
 	if not inside then inside = false else checkluatype(inside, TYPE_BOOL) end
 	if not phys then phys = false else checkluatype(phys, TYPE_BOOL) end
-	
+
 	checkvis(ent)
 	if phys then checkphys(ent) end
-	
+
 	local origin = vunwrap(origin)
 	local normal = vunwrap(normal)
-	
+
 	return ProperClipping.AddClip(ent, normal, normal:Dot(origin), inside, phys)
 end
 
@@ -63,9 +63,9 @@ end
 -- @return True or false if it was succesfull
 function ents_methods:removeClips()
 	local ent = getent(self)
-	
+
 	checkvis(ent)
-	
+
 	return ProperClipping.RemoveClips(ent)
 end
 
@@ -75,15 +75,15 @@ end
 -- @return True or false if it was succesfull
 function ents_methods:removeClip(origin, normal)
 	local ent = getent(self)
-	
+
 	checkvis(ent)
-	
+
 	local origin = vunwrap(origin)
 	local normal = vunwrap(normal)
-	
+
 	local exists, index = ProperClipping.ClipExists(ent, normal, normal:Dot(origin))
 	if not exists then return false end
-	
+
 	return ProperClipping.RemoveClip(ent, index)
 end
 
@@ -92,9 +92,9 @@ end
 -- @return True or false if it was succesfull
 function ents_methods:removeClipByIndex(index)
 	local ent = getent(self)
-	
+
 	checkvis(ent)
-	
+
 	return ProperClipping.RemoveClip(ent, index)
 end
 
@@ -104,10 +104,10 @@ end
 -- @return Exists bool, Index number
 function ents_methods:clipExists(origin, normal)
 	local ent = getent(self)
-	
+
 	local origin = vunwrap(origin)
 	local normal = vunwrap(normal)
-	
+
 	return ProperClipping.ClipExists(ent, normal, normal:Dot(origin))
 end
 
@@ -117,10 +117,10 @@ end
 -- @return Index number
 function ents_methods:getClipIndex(origin, normal)
 	local ent = getent(self)
-	
+
 	local origin = vunwrap(origin)
 	local normal = vunwrap(normal)
-	
+
 	local _, index = ProperClipping.ClipExists(ent, normal, normal:Dot(origin))
 	return index
 end

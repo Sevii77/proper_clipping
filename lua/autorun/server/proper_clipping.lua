@@ -18,19 +18,19 @@ function ProperClipping.AddClip(ent, norm, dist, inside, physics, keepmass, supp
 			ProperClipping.ClippedEntities[ent] = nil
 		end)
 	end
-	
+
 	ent.Clipped = true
 	ent.ClipData = ent.ClipData or {}
-	
+
 	if #ent.ClipData >= cvar_visuals:GetInt() then return false end
-	
+
 	if type(dist) ~= "table" then
 		norm = {norm}
 		dist = {dist}
 		inside = {inside}
 		physics = {physics}
 	end
-	
+
 	local norms, dists = {}, {}
 	local physcount = 1
 	for i = 1, #norm do
@@ -38,7 +38,7 @@ function ProperClipping.AddClip(ent, norm, dist, inside, physics, keepmass, supp
 		local dist = dist[i]
 		local inside = inside[i]
 		local physics = physics[i]
-		
+
 		table.insert(ent.ClipData, {
 			norm = norm,
 			n = norm:Angle(),
@@ -48,65 +48,65 @@ function ProperClipping.AddClip(ent, norm, dist, inside, physics, keepmass, supp
 			physics = physics, -- this is used to network and call on client automaticly
 			new = true -- whats this used for? no clue but lets add it anyways
 		})
-		
+
 		hook.Run("ProperClippingClipAdded", ent, norm, dist, inside, physics)
-		
+
 		if physics then
 			norms[i] = norm
 			dists[i] = dist
 			physcount = physcount + 1
 		end
 	end
-	
+
 	if not suppress_physics and physcount ~= 1 then
 		ProperClipping.ClipPhysics(ent, norms, dists, keepmass)
 	end
-	
+
 	ProperClipping.StoreClips(ent)
 	ProperClipping.NetworkClips(ent)
-	
+
 	return true
 end
 
 function ProperClipping.RemoveClips(ent, keepmass)
 	if not ent.ClipData then return false end
-	
+
 	ProperClipping.ClippedEntities[ent] = nil
 	ent:RemoveCallOnRemove("proper_clipping")
-	
+
 	ent.Clipped = nil
 	ent.ClipData = nil
-	
+
 	duplicator.ClearEntityModifier(ent, "proper_clipping")
 	duplicator.ClearEntityModifier(ent, "clips")
-	
+
 	ProperClipping.ResetPhysics(ent, keepmass)
 	ProperClipping.NetworkClips(ent)
-	
+
 	hook.Run("ProperClippingClipsRemoved", ent)
-	
+
 	return true
 end
 
 function ProperClipping.RemoveClip(ent, index, keepmass)
 	if not ent.ClipData then return false end
 	if not ent.ClipData[index] then return false end
-	
+
 	local clip = ent.ClipData[index]
-	
+
 	table.remove(ent.ClipData, index)
-	
+
 	if not next(ent.ClipData) then
 		ProperClipping.RemoveClips(ent, keepmass)
-		
+
 		hook.Run("ProperClippingClipRemoved", ent, index)
-		
+
 		return true
 	end
-	
+
 	if clip.physics then
 		ProperClipping.ResetPhysics(ent, keepmass)
-		
+
 		local norms, dists = {}, {}
 		local physcount = 1
 		for _, clip in ipairs(ent.ClipData) do
@@ -116,17 +116,17 @@ function ProperClipping.RemoveClip(ent, index, keepmass)
 				physcount = physcount + 1
 			end
 		end
-		
+
 		if physcount ~= 1 then
 			ProperClipping.ClipPhysics(ent, norms, dists, keepmass)
 		end
 	end
-	
+
 	ProperClipping.StoreClips(ent)
 	ProperClipping.NetworkClips(ent)
-	
+
 	hook.Run("ProperClippingClipRemoved", ent, index)
-	
+
 	return true
 end
 
@@ -136,7 +136,7 @@ function ProperClipping.StoreClips(ent)
 	if IsValid(physobj) then
 		duplicator.StoreEntityModifier(ent, "mass", {Mass = physobj:GetMass()})
 	end
-	
+
 	-- Clips for self
 	local clips = {}
 	for i, clip in ipairs(ent.ClipData) do
@@ -147,9 +147,9 @@ function ProperClipping.StoreClips(ent)
 			clip.physics
 		}
 	end
-	
+
 	duplicator.StoreEntityModifier(ent, "proper_clipping", clips)
-	
+
 	-- Clips for https://steamcommunity.com/sharedfiles/filedetails/?id=106753151
 	local clips = {}
 	for i, clip in ipairs(ent.ClipData) do
@@ -160,9 +160,9 @@ function ProperClipping.StoreClips(ent)
 			new = true
 		}
 	end
-	
+
 	duplicator.StoreEntityModifier(ent, "clips", clips)
-	
+
 	-- Not gonna do the other tool since that can load in clips from the one above anyways
 	-- This could lead to issue by using all 3 tools in a specific order on the same ent
 	-- saving it across different servers and w/e but thats not my issue
@@ -173,7 +173,7 @@ function ProperClipping.NetworkClips(ent, ply)
 	timer.Create(tostring(ent) .. "_proper_clipping", 0.1, 1, function()
 		net.Start("proper_clipping")
 		net.WriteUInt(ent:EntIndex(), 14)
-		
+
 		if not ent.ClipData then
 			net.WriteBool(false)
 		else
@@ -188,30 +188,30 @@ function ProperClipping.NetworkClips(ent, ply)
 				net.WriteBool(clip.physics)
 			end
 		end
-		
+
 		net.Send(ply or player.GetHumans())
-		
+
 		hook.Run("ProperClippingClipsNetworked", ent, ply)
 	end)
 end
 
 function ProperClipping.ClipExists(ent, norm, dist)
 	if not ent.ClipData then return false end
-	
+
 	local x = math.Round(norm.x, 4)
 	local y = math.Round(norm.y, 4)
 	local z = math.Round(norm.z, 4)
 	local d = math.Round(dist, 2)
-	
+
 	for i, clip in ipairs(ent.ClipData) do
 		if math.Round(clip.norm.x, 4) ~= x then continue end
 		if math.Round(clip.norm.y, 4) ~= y then continue end
 		if math.Round(clip.norm.z, 4) ~= z then continue end
 		if math.Round(clip.dist, 2) ~= d then continue end
-		
+
 		return true, i
 	end
-	
+
 	return false
 end
 
@@ -222,24 +222,24 @@ hook.Add("PlayerInitialSpawn", "proper_clipping", function(ply)
 	hook.Add("SetupMove", id, function(ply2, _, cmd)
 		if not ply:IsValid() then
 			hook.Remove("SetupMove", id)
-			
+
 			return
 		end
-		
+
 		if ply ~= ply2 then return end
 		if cmd:IsForced() then return end
-		
+
 		local ent_count, clip_count = 0, 0
 		for ent in pairs(ProperClipping.ClippedEntities) do
 			ProperClipping.NetworkClips(ent, ply)
 			ent_count = ent_count + 1
 			clip_count = clip_count + #ent.ClipData
 		end
-		
+
 		if ent_count > 0 then
 			print("Sending " .. clip_count .. " clips from " .. ent_count .. " entities to " .. ply:GetName())
 		end
-		
+
 		hook.Remove("SetupMove", id)
 	end)
 end)
@@ -255,14 +255,14 @@ end
 local function modified(ent)
 	local a, b = ent.EntityMods.proper_clipping, ent.EntityMods.clips
 	if #a ~= #b then return true end
-	
+
 	for i = 1, #a do
 		local anorm, adist = a[i][1], a[i][2]
 		local bnorm, bdist = convert(ent, b[i].n:Forward(), b[i].d)
-		
+
 		if not anorm:IsEqualTol(bnorm, 4) or math.Round(adist, 2) ~= math.Round(bdist, 2) then return true end
 	end
-	
+
 	return false
 end
 
@@ -270,31 +270,31 @@ end
 duplicator.RegisterEntityModifier("mass", function(ply, ent, data)
 	if not data.Mass then return end
 	if not IsValid(ent) then return end
-	
+
 	local physobj = ent:GetPhysicsObject()
 	if not IsValid(physobj) then return end
-	
+
 	physobj:SetMass(data.Mass)
 end)
 
 -- Clips from self
 duplicator.RegisterEntityModifier("proper_clipping", function(ply, ent, data)
 	if not IsValid(ent) then return end
-	
+
 	-- Entity was last clipped with this tool so only handle it with that entmod
 	if ent.EntityMods.clipping_all_prop_clips then return end
 	if modified(ent) then return end
-	
+
 	if not hook.Run("CanTool", ply, {Entity = ent}, "proper_clipping") then
 		ply:ChatPrint("Not allowed to create visual clips, " .. tostring(ent) .. " will be spawned without any.")
-		
+
 		return
 	end
-	
+
 	timer.Simple(0, function()
 		local physcount = 0
 		local physmax = ProperClipping.MaxPhysicsClips()
-		
+
 		for _, clip in ipairs(data) do
 			if clip.physics then
 				if not hook.Run("CanTool", ply, {Entity = ent}, "proper_clipping_physics") then
@@ -302,29 +302,29 @@ duplicator.RegisterEntityModifier("proper_clipping", function(ply, ent, data)
 					
 					physcount = math.huge
 				end
-				
+
 				break
 			end
 		end
-		
+
 		local norms, dists, insides, physicss = {}, {}, {}, {}
 		for i, clip in ipairs(data) do
 			local norm, dist, inside, physics = unpack(clip)
-			
+
 			if physics then
 				physcount = physcount + 1
-				
+
 				if physcount > physmax then
 					physics = false
 				end
 			end
-			
+
 			norms[i] = norm
 			dists[i] = dist
 			insides[i] = inside
 			physicss[i] = physics
 		end
-		
+
 		if AdvDupe2 then
 			for _, queue in ipairs(AdvDupe2.JobManager.Queue) do
 				for _, e in pairs(queue.CreatedEntities) do
@@ -336,11 +336,11 @@ duplicator.RegisterEntityModifier("proper_clipping", function(ply, ent, data)
 				end
 			end
 		end
-		
+
 		ProperClipping.AddClip(ent, norms, dists, insides, physicss, true)
-		
+
 		::NOPHYS::
-		
+
 		if physcount > physmax and physcount ~= math.huge then
 			ply:ChatPrint("Max physics clips per entity reached (max " .. physmax .. "), " .. tostring(ent) .. " will only have " .. physmax .. " instead of " .. physcount .. ".")
 		end
@@ -352,17 +352,17 @@ duplicator.RegisterEntityModifier("clips", function(ply, ent, data)
 	if not IsValid(ent) then return end
 	if ent.EntityMods.clipping_all_prop_clips then return end
 	if ent.EntityMods.proper_clipping and not modified(ent) then return end
-	
+
 	if not hook.Run("CanTool", ply, {Entity = ent}, "proper_clipping") then
 		ply:ChatPrint("Not allowed to create visual clips, " .. tostring(ent) .. " will be spawned without any.")
-		
+
 		return
 	end
-	
+
 	timer.Simple(0, function()
 		for _, clip in ipairs(data) do
 			local norm, dist = convert(ent, clip.n:Forward(), clip.d)
-			
+
 			if not ProperClipping.ClipExists(ent, norm, dist) then
 				ProperClipping.AddClip(ent, norm, dist, clip.inside)
 			end
@@ -373,23 +373,23 @@ end)
 -- Clips from https://steamcommunity.com/sharedfiles/filedetails/?id=238138995
 duplicator.RegisterEntityModifier("clipping_all_prop_clips", function(ply, ent, data)
 	if not IsValid(ent) then return end
-	
+
 	if not hook.Run("CanTool", ply, {Entity = ent}, "proper_clipping") then
 		ply:ChatPrint("Not allowed to create visual clips, " .. tostring(ent) .. " will be spawned without any.")
-		
+
 		return
 	end
-	
+
 	local inside = ent.EntityMods.clipping_render_inside
 	inside = inside and inside[1]
-	
+
 	duplicator.ClearEntityModifier(ent, "clipping_all_prop_clips")
 	duplicator.ClearEntityModifier(ent, "clipping_render_inside")
-	
+
 	timer.Simple(0, function()
 		for _, clip in ipairs(data) do
 			local norm, dist = convert(ent, clip[1]:Forward(), clip[2])
-			
+
 			if not ProperClipping.ClipExists(ent, norm, dist) then
 				ProperClipping.AddClip(ent, norm, dist, inside)
 			end
@@ -401,7 +401,7 @@ end)
 hook.Add("AdvDupe_FinishPasting", "proper_clipping", function(dupe)
 	for id, ent in pairs(dupe[1].CreatedEntities) do
 		if not ent.Clipped then goto SKIP end
-		
+
 		local norms, dists = {}, {}
 		local physcount = 1
 		for _, clip in ipairs(ent.ClipData) do
@@ -411,11 +411,11 @@ hook.Add("AdvDupe_FinishPasting", "proper_clipping", function(dupe)
 				physcount = physcount + 1
 			end
 		end
-		
+
 		if physcount ~= 1 then
 			ProperClipping.ClipPhysics(ent, norms, dists, true)
 		end
-		
+
 		::SKIP::
 	end
 end)
