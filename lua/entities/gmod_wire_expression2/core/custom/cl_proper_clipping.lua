@@ -8,3 +8,4 @@ E2Helper.Descriptions["removeClipByIndex(e:n)"] = "Removes the clip on the entit
 E2Helper.Descriptions["removeClip(e:n)"]        = "Alias of removeClipByIndex(e:n); Removes the clip on the entity with number as index"
 E2Helper.Descriptions["getClipIndex(e:vv)"]     = "Returns the clip index of the entity with vector1 as origin and vector2 as normal, will be -1 if the clip doesn't exist"
 E2Helper.Descriptions["physicsClipsLeft(e:)"]   = "Returns the amount of physics clips left that can be made on the entity"
+E2Helper.Descriptions["getClipData(e:)"]        = "Returns the internal clip data of the entity as an 'array' of tables. Consists of 2 sets of clip data (norm/dist/inside/physics used by addon itself, n/d/inside/new are backwards compatibility for other addons)"
