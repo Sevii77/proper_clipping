@@ -105,3 +105,40 @@ end
 e2function number entity:physicsClipsLeft()
 	return ProperClipping.PhysicsClipsLeft(this)
 end
+
+e2function table entity:getClipData()
+	if not this.ClipData then return E2Lib.newE2Table() end
+	local res = E2Lib.newE2Table()
+
+	for key, tbl in ipairs(this.ClipData) do
+		nestedTbl = {
+			s = {
+				d = tbl.d,
+				dist = tbl.dist,
+				inside = tbl.inside and 1 or 0,
+				n = tbl.n,
+				new = tbl.new and 1 or 0,
+				norm = tbl.norm,
+				physics = tbl.physics and 1 or 0
+			},
+			stypes = {
+				d = "s",
+				dist = "n",
+				inside = "n",
+				n = "v",
+				new = "n",
+				norm = "v",
+				physics = "n"
+			},
+			size = #tbl,
+			n = {},
+			ntypes = {}
+		}
+		
+		res.n[key] = nestedTbl
+		res.ntypes[key] = "t"
+	end
+	
+	res.size = #this.ClipData
+	return res
+end
