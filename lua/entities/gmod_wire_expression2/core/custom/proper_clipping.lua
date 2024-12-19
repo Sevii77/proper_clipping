@@ -113,24 +113,18 @@ e2function table entity:getClipData()
 	for key, tbl in ipairs(this.ClipData) do
 		nestedTbl = {
 			s = {
-				d = tbl.d,
-				dist = tbl.dist,
-				inside = tbl.inside and 1 or 0,
-				n = tbl.n,
-				new = tbl.new and 1 or 0,
-				norm = tbl.norm,
-				physics = tbl.physics and 1 or 0
+				distance = tbl.dist,
+				isInside = tbl.inside and 1 or 0,
+				normal = tbl.norm,
+				isPhysics = tbl.physics and 1 or 0
 			},
 			stypes = {
-				d = "s",
-				dist = "n",
-				inside = "n",
-				n = "v",
-				new = "n",
-				norm = "v",
-				physics = "n"
+				distance = "n",
+				isInside = "n",
+				normal = "v",
+				isPhysics = "n"
 			},
-			size = #tbl,
+			size = 4,
 			n = {},
 			ntypes = {}
 		}
