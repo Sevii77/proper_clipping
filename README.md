@@ -22,6 +22,7 @@ Expression2:
 - ENTITY.removeClipByIndex
 - ENTITY.getClipIndex
 - ENTITY.physicsClipsLeft
+- ENTITY.getClipData
 
 ---
 
