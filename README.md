@@ -14,6 +14,7 @@ StarfallEx:
 - ENTITY.clipExists
 - ENTITY.getClipIndex
 - ENTITY.physicsClipsLeft
+- ENTITY.getClipData
 
 Expression2:
 - ENTITY.addClip

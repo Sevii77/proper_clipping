@@ -132,4 +132,25 @@ function ents_methods:physicsClipsLeft()
 	return ProperClipping.PhysicsClipsLeft(ent)
 end
 
+--- Returns the clip data
+-- @return Table array of clip data (distance, normal, isInside, isPhysics), nil if it doesn't exist
+function ents_methods:getClipData()
+	local ent = getent(self)
+	if ent.ClipData == nil then
+		return nil
+	end
+	
+	local rtn = {}
+	for i, clip in ipairs(ent.ClipData) do
+		rtn[i] = {
+			distance = isnumber(clip.dist) and clip.dist or 0,
+			normal = vwrap(isvector(clip.norm) and clip.norm or Vector()),
+			isInside = isbool(clip.inside) and clip.inside or false,
+			isPhysics = isbool(clip.physics) and clip.physics or false,
+		}
+	end
+	
+	return rtn
+end
+
 end
