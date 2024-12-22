@@ -321,6 +321,12 @@ if CLIENT then
 	local color_green = Color(30, 255, 120, 190)
 	local color_green2 = Color(25, 200, 90, 100)
 	
+	-- If we draw 2 models that are the same back to back with clips it freaks out
+	-- (it doesnt use to do this but idfk anymore)
+	-- this is drawn between the 2 and somehow fixes it (yay)
+	local model_fixer = ClientsideModel("models/error.mdl")
+	model_fixer:SetNoDraw(true)
+	
 	local model1 = ClientsideModel("models/error.mdl")
 	local model2 = ClientsideModel("models/error.mdl")
 	model1:SetMaterial("models/debug/debugwhite")
@@ -423,6 +429,8 @@ if CLIENT then
 				render.SetColorModulation(0.3, 2, 0.5)
 				DrawPreviewModel(model1)
 				render.PopCustomClipPlane()
+				
+				model_fixer:DrawModel()
 				
 				render.PushCustomClipPlane(norm * (i and -1 or 1), norm:Dot(origin) * (i and -1 or 1) + offset)
 				render.SetColorModulation(2, 0.2, 0.3)
