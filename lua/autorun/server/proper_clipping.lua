@@ -228,7 +228,9 @@ hook.Add("PlayerInitialSpawn", "proper_clipping", function(ply)
 		
 		if ply ~= ply2 then return end
 		if cmd:IsForced() then return end
-		
+
+		hook.Remove("SetupMove", id)
+
 		local ent_count, clip_count = 0, 0
 		for ent in pairs(ProperClipping.ClippedEntities) do
 			ProperClipping.NetworkClips(ent, ply)
@@ -239,8 +241,6 @@ hook.Add("PlayerInitialSpawn", "proper_clipping", function(ply)
 		if ent_count > 0 then
 			print("Sending " .. clip_count .. " clips from " .. ent_count .. " entities to " .. ply:GetName())
 		end
-		
-		hook.Remove("SetupMove", id)
 	end)
 end)
 
